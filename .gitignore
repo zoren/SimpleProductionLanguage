@@ -1,0 +1,5 @@
+packages/*
+obj/*
+bin/*
+*.sln.DotSettings.user
+*.v12.suo
