@@ -15,4 +15,4 @@
 \ c:Circle, r:Ray ->
 	(r.x - c.x) * (r.x - c.x) +
 	(r.y - c.y) * (r.y - c.y) < c.radius ? 
-		find_or_create pixel(x := r.x, y := r.y, color := circle.color)
+		find_or_create pixel(x := r.x, y := r.y, color := c.color)

@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SimpleProductionLanguage", "SimpleProductionLanguage.fsproj", "{D43B9869-7E39-4BF8-B3B8-1DE7D18C22F9}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SimpleProductionLanguage", "SimpleProductionLanguage\SimpleProductionLanguage.fsproj", "{D43B9869-7E39-4BF8-B3B8-1DE7D18C22F9}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Tests", "..\Tests\Tests.fsproj", "{DC027495-0684-4A3A-B24A-4E11ED77A3A9}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Tests", "Tests\Tests.fsproj", "{DC027495-0684-4A3A-B24A-4E11ED77A3A9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
