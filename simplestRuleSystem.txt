@@ -1,0 +1,37 @@
+﻿// type definitions
+Ray {
+	x:int, y:int
+}
+Color{
+	red:int, green:int, blue:int
+}
+
+Circle{
+	x:int, y:int, radius:int, color:Color
+}
+
+Setup{
+	width:int, height:int
+}
+
+// create rays
+\ s:Setup ->
+	find_or_create Ray(x := 0, y := 0)
+
+\ s:Setup, r:Ray ->
+	r.x < s.x ?
+		find_or_create Ray(x := r.x + 1, y := r.y)
+
+\ s:Setup, r:Ray ->
+	r.y < s.y ?
+		find_or_create Ray(x := r.x, y := r.y + 1)
+
+// draw circle
+\ c:Circle, r:Ray ->
+	(r.x - c.x) * (r.x - c.x) +
+	(r.y - c.y) * (r.y - c.y) < c.radius ? 
+		find_or_create pixel(x := r.x, y := r.y, color = circle.color)
+
+// create scene
+new Setup{width := 200, height := 200}
+new Circle{x := 100, y := 100, color = new Color{red := 255, green := 0, blue := 0}}

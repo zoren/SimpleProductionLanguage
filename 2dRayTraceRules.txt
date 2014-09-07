@@ -1,0 +1,18 @@
+﻿// create rays
+\ s:Setup ->
+	true ?
+		find_or_create Ray(x := 0, y := 0)
+
+\ s:Setup, r:Ray ->
+	r.x < s.x ?
+		find_or_create Ray(x := r.x + 1, y := r.y)
+
+\ s:Setup, r:Ray ->
+	r.y < s.y ?
+		find_or_create Ray(x := r.x, y := r.y + 1)
+
+// draw circle
+\ c:Circle, r:Ray ->
+	(r.x - c.x) * (r.x - c.x) +
+	(r.y - c.y) * (r.y - c.y) < c.radius ? 
+		find_or_create pixel(x := r.x, y := r.y, color := circle.color)
