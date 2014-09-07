@@ -51,20 +51,20 @@
   <ItemGroup>
     <Compile Include="ParserTests.fs" />
     <Compile Include="InterpreterTests.fs" />
-    <None Include="packages.config" />
     <None Include="app.config" />
     <Content Include="2dRayTraceRules.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="rayTracerWithTypes.txt" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FParsec">
-      <HintPath>..\SimpleProductionLanguage\packages\FParsec.1.0.1\lib\net40-client\FParsec.dll</HintPath>
+      <HintPath>..\packages\FParsec.1.0.1\lib\net40-client\FParsec.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="FParsecCS">
-      <HintPath>..\SimpleProductionLanguage\packages\FParsec.1.0.1\lib\net40-client\FParsecCS.dll</HintPath>
+      <HintPath>..\packages\FParsec.1.0.1\lib\net40-client\FParsecCS.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="mscorlib" />
@@ -72,21 +72,21 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="nunit.framework">
-      <HintPath>..\SimpleProductionLanguage\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
+      <HintPath>..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
-    <Reference Include="Unquote">
-      <HintPath>..\SimpleProductionLanguage\packages\Unquote.2.2.2\lib\net40\Unquote.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <ProjectReference Include="..\SimpleProductionLanguage\SimpleProductionLanguage.fsproj">
       <Name>SimpleProductionLanguage</Name>
       <Project>{d43b9869-7e39-4bf8-b3b8-1de7d18c22f9}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <Reference Include="Unquote">
+      <HintPath>..\packages\Unquote.2.2.2\lib\net40\Unquote.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

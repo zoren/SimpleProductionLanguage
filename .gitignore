@@ -1,5 +1,5 @@
 packages/*
-obj/*
-bin/*
+**/obj/*
+**/bin/*
 *.sln.DotSettings.user
 *.v12.suo
