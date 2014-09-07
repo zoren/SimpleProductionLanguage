@@ -118,3 +118,63 @@ module InterpreterTests =
                 | Assignment(instId', field', value') when instId = instId' -> Some (field', value')
                 | _ -> None) out
         printf "%A" <| Seq.map findAssignments pixels
+
+    [<Test>]
+    let testRemove()=
+        let s = @"
+\ s:Setup ->
+	true ?
+		find_or_create Ray(x := 0, y := 0)
+
+\ s:Setup, r:Ray ->
+	r.x < s.x ?
+		find_or_create Ray(x := r.x + 1, y := r.y)
+
+\ s:Setup, r:Ray ->
+	r.y < s.y ?
+		find_or_create Ray(x := r.x, y := r.y + 1)"
+        let rules = parseRules s
+        let interp = new Interpreter(rules)
+        interp.Add(Instance(0, "Setup"))
+        interp.Add(Assignment(0, "x", Int 3))
+        interp.Add(Assignment(0, "y", Int 3))
+        let out = interp.GetFacts()
+        for fact in out do
+            printfn "%A" fact
+        test <@ 16 = (Seq.length <| interp.GetInstancesOfType "Ray") @>
+        interp.Remove(Instance(0, "Setup"))
+        test <@ 0 = (Seq.length <| interp.GetInstancesOfType "Ray") @>
+
+    [<Test>]
+    let testModify()=
+        let s = @"
+\ s:Setup ->
+	true ?
+		find_or_create Ray(x := 0, y := 0)
+
+\ s:Setup, r:Ray ->
+	r.x < s.x ?
+		find_or_create Ray(x := r.x + 1, y := r.y)
+
+\ s:Setup, r:Ray ->
+	r.y < s.y ?
+		find_or_create Ray(x := r.x, y := r.y + 1)"
+        let rules = parseRules s
+        let interp = new Interpreter(rules)
+        interp.Add(Instance(0, "Setup"))
+        interp.Add(Assignment(0, "x", Int 3))
+        interp.Add(Assignment(0, "y", Int 3))
+        let out = interp.GetFacts()
+//        for fact in out do
+//            printfn "%A" fact
+        test <@ 16 = (Seq.length <| interp.GetInstancesOfType "Ray") @>
+        let added, removed = interp.Modify(Assignment(0, "y", Int 3), Assignment(0, "y", Int 2))
+        test <@ Set.singleton (Assignment(0,"y", Int 2)) = added @>
+        test <@ Set.contains (Assignment(0,"y", Int 3))  removed @>
+        let isInstanceFact =
+            function
+            | Instance _ -> true
+            | _ -> false
+        let removedInstance = Set.filter isInstanceFact removed
+        test <@ Set.count removedInstance = 4 @>
+        test <@ 12 = (Seq.length <| interp.GetInstancesOfType "Ray") @>
