@@ -52,6 +52,7 @@
     <None Include="packages.config" />
     <None Include="app.config" />
     <Compile Include="PatternTreeTests.fs" />
+    <Compile Include="ReteTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />

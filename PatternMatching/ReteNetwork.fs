@@ -3,8 +3,10 @@
 module ReteNetwork =
   open PatternMatching.PatternTree
 
-  type WME = Value array
-  type TokenElement = WME
+  type WME = Fact
+  type TokenElement =
+    | WMETokenElement of WME
+//    | ListTokenElement of WME
   type Token = TokenElement list
   
   type BetaMemory = { tokens : Token list ref }
@@ -30,27 +32,7 @@ module ReteNetwork =
     parent : ReteNode option ref
   }
 
+  type AlphaNetwork =
+    seq<Pattern * AlphaMemory>
 
-  type ReteGraph = ReteNode array
-
-  let evalTest (token:Token) (test:Test) : bool = failwith ""
-
-  type ActivationFlag = Activate | Deactivate
-
-  let processAlphaMem (flag:ActivationFlag) (alphaMem:AlphaMemory) (w:WME) =
-    let delta = ref []
-    let rec joinNodeRight ({nodeType = Join jd} as node) (w : WME) : unit =
-     ()
-    and joinNodeLeft  ({nodeType = Join jd} as node) (token : Token) : unit =
-      ()
-    and betaMemoryLeft  ({nodeType = Beta betaMem} as node) (t:Token) (tokElement : TokenElement) : unit =
-      ()
-    and leftActivation (node:ReteNode) (t:Token) (tokElementOpt:TokenElement option) : unit =
-      ()
-    for child in alphaMem.successors do
-      joinNodeRight child w
-    !delta
-
-// interpretation
-  let activate (rete:ReteGraph) (fact:Fact) : ConflictSet =
-    failwith ""
+  type ReteGraph = ReteNode * AlphaNetwork

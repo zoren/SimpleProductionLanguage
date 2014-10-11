@@ -8,20 +8,23 @@ module PatternTreeTests =
   open Swensen.Unquote.Assertions
 
   [<Test>]
-  let ``lala``() =
-    let ptree = PTree(("classType", [|Anything; PatternValue <| String "CLASS" |]), [], [|Production "P"|])
+  let ``A single pattern matches``() =
+    let ptree = PTree(("classType", [|Anything IntType; PatternValue <| String "CLASS" |]), [], [|Production "P"|])
     let state = mkEmptyState ptree
     let fact = "classType", [|Int 1; String "CLASS"|]
 
     test <@ activate state fact = Set.ofList ["P", [fact]] @>
+
+  let numValueFact = "numValue"
+
   // tree to filter instances of type CLASS with X = 5.0
   let isClassWithXEquals5 =
-    let xEquals5 = PTree(("value", [| Anything; PatternValue <| String "X"; Anything |]),
+    let xEquals5 = PTree((numValueFact, [| Anything IntType; PatternValue <| String "X"; Anything DoubleType|]),
                       [Comparison(Variable(0,2), Eq, Const <| Double 5.0);
                         Comparison(Variable(0,0), Eq, Variable(1,0));
                       ],
                       [|Production "P"|])    
-    PTree(("classType", [|Anything; PatternValue <| String "CLASS" |]), [], [|xEquals5|])
+    PTree(("classType", [|Anything IntType ; PatternValue <| String "CLASS" |]), [], [|xEquals5|])
 
   [<Test>]
   let ``test activation``() =
@@ -41,7 +44,7 @@ module PatternTreeTests =
 
     ignore <| activate state fact
     
-    let assignFact = "value", [|Int 1; String "X"; Double 5.0|]
+    let assignFact = numValueFact, [|Int 1; String "X"; Double 5.0|]
     
     test <@ activate state assignFact = Set.ofList ["P", [assignFact; fact]] @>
 
@@ -53,7 +56,7 @@ module PatternTreeTests =
 
     ignore <| activate state fact
     
-    let assignFact = "value", [|Int 1; String "X"; Double 5.0|]
+    let assignFact = numValueFact, [|Int 1; String "X"; Double 5.0|]
     
     ignore <| activate state assignFact
 
@@ -67,6 +70,6 @@ module PatternTreeTests =
 
     ignore <| activate state fact
     
-    let assignFact = "value", [|Int 1; String "X"; Double 6.0|]
+    let assignFact = numValueFact, [|Int 1; String "X"; Double 6.0|]
     
     test <@ Set.isEmpty <| activate state assignFact @>

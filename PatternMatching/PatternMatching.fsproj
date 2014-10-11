@@ -44,6 +44,8 @@
   <ItemGroup>
     <Compile Include="PatternTree.fs" />
     <Compile Include="ReteNetwork.fs" />
+    <Compile Include="ReteBuilder.fs" />
+    <Compile Include="ReteInterpreter.fs" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>

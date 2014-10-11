@@ -12,9 +12,9 @@ module PatternTree =
     type Fact = FactKind * Value array
 
     // patterns
-
+    type ValueType = IntType | StringType | DoubleType
     type ValuePattern =
-        | Anything
+        | Anything of ValueType
         | PatternValue of Value
 
     type Pattern = FactKind * ValuePattern array
@@ -42,7 +42,10 @@ module PatternTree =
 
     let matchValuePat (v:Value) (vp:ValuePattern) =
         match vp with
-        | Anything -> true
+        | Anything valueType ->
+          match v, valueType with
+          | Int _, IntType | String _, StringType | Double _, DoubleType -> true
+          | _ -> failwith "type error, value incompatible with anything type"
         | PatternValue v'  -> valueEq v v'
     
     let matchFactPattern ((patFactKind, patArgs):Pattern)  ((factKind, args):Fact) =
@@ -55,7 +58,7 @@ module PatternTree =
             function
                 | Const v -> v
                 | Variable(tokenIndex, fieldIndex) ->
-                  let _, args = List.nth env tokenIndex
+                  let _,args = List.nth env tokenIndex
                   Array.get args fieldIndex
         match test with
             | Comparison (e1, comp, e2) ->
@@ -67,7 +70,7 @@ module PatternTree =
     type ConflictSet = Set<ProductionId * Environment>
 
     let matchTree ptree facts : ConflictSet =
-        let rec loop (env:Fact list) =
+        let rec loop env =
           function
           | Production p -> Seq.singleton (p, env)
           | PTree(pat, tests, children) ->
