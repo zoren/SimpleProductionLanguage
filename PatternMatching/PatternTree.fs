@@ -21,11 +21,14 @@ module PatternTree =
 
     type ProductionId = string
 
-    type ComparisonOperator = Eq 
+    type BinOperator = Plus | Minus | Times | Division
 
     type Exp =
         | Const of Value
         | Variable of tokenIndex : int * fieldIndex : int
+        | BinOp of Exp * BinOperator * Exp
+
+    type ComparisonOperator = Eq | Lt
 
     type Test =
         Comparison of Exp * ComparisonOperator * Exp
@@ -35,9 +38,9 @@ module PatternTree =
         | Production of ProductionId
 
 // interpretation  
-    let valueEq v v'=
+    let valueComp pred v v' =
       match v,v' with
-      | Int _, Int _ | String _, String _ | Double _, Double _ -> v = v'
+      | Int _, Int _ | String _, String _ | Double _, Double _ -> pred v v'
       | _ -> failwith "type error, incompatible values compared"
 
     let matchValuePat (v:Value) (vp:ValuePattern) =
@@ -46,12 +49,17 @@ module PatternTree =
           match v, valueType with
           | Int _, IntType | String _, StringType | Double _, DoubleType -> true
           | _ -> failwith "type error, value incompatible with anything type"
-        | PatternValue v'  -> valueEq v v'
+        | PatternValue v'  -> valueComp (=) v v'
     
     let matchFactPattern ((patFactKind, patArgs):Pattern)  ((factKind, args):Fact) =
         factKind = patFactKind && Array.forall2 matchValuePat args patArgs
 
     type Environment = Fact list
+
+    let compFunc =
+      function
+      | Eq -> valueComp (=)
+      | Lt -> valueComp (<)
 
     let evalTest (env:Environment) test =
         let evalExp =
@@ -62,10 +70,7 @@ module PatternTree =
                   Array.get args fieldIndex
         match test with
             | Comparison (e1, comp, e2) ->
-              let compFunc =
-                match comp with
-                | Eq -> valueEq
-              compFunc (evalExp e1) (evalExp e2)
+              compFunc comp (evalExp e1) (evalExp e2)
 
     type ConflictSet = Set<ProductionId * Environment>
 

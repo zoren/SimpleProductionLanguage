@@ -5,13 +5,13 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>dc027495-0684-4a3a-b24a-4e11ed77a3a9</ProjectGuid>
+    <ProjectGuid>f6dc8be0-0ac2-4e8e-87a9-96eecbcfc244</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>Tests</RootNamespace>
-    <AssemblyName>Tests</AssemblyName>
+    <RootNamespace>SPLRete</RootNamespace>
+    <AssemblyName>SPLRete</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFSharpCoreVersion>4.3.1.0</TargetFSharpCoreVersion>
-    <Name>Tests</Name>
+    <Name>SPLRete</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,7 +21,7 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Debug\Tests.XML</DocumentationFile>
+    <DocumentationFile>bin\Debug\SPLRete.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -30,8 +30,32 @@
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Release\Tests.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\SPLRete.XML</DocumentationFile>
   </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="SPLToRete.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PatternMatching\PatternMatching.fsproj">
+      <Name>PatternMatching</Name>
+      <Project>{f0708a63-5e16-4f6b-82f0-113dad563edc}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\SimpleProductionLanguage\SimpleProductionLanguage.fsproj">
+      <Name>SimpleProductionLanguage</Name>
+      <Project>{d43b9869-7e39-4bf8-b3b8-1de7d18c22f9}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
   </PropertyGroup>
@@ -48,57 +72,6 @@
     </Otherwise>
   </Choose>
   <Import Project="$(FSharpTargetsPath)" />
-  <ItemGroup>
-    <Compile Include="ParserTests.fs" />
-    <Compile Include="InterpreterTests.fs" />
-    <Compile Include="ReteRay.fs" />
-    <None Include="app.config" />
-    <Content Include="2dRayTraceRules.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="rayTracerWithTypes.txt" />
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\PatternMatching\PatternMatching.fsproj">
-      <Name>PatternMatching</Name>
-      <Project>{f0708a63-5e16-4f6b-82f0-113dad563edc}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\SPLRete\SPLRete.fsproj">
-      <Name>SPLRete</Name>
-      <Project>{f6dc8be0-0ac2-4e8e-87a9-96eecbcfc244}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <Reference Include="FParsec">
-      <HintPath>..\packages\FParsec.1.0.1\lib\net40-client\FParsec.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="FParsecCS">
-      <HintPath>..\packages\FParsec.1.0.1\lib\net40-client\FParsecCS.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="mscorlib" />
-    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="nunit.framework">
-      <HintPath>..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Numerics" />
-    <ProjectReference Include="..\SimpleProductionLanguage\SimpleProductionLanguage.fsproj">
-      <Name>SimpleProductionLanguage</Name>
-      <Project>{d43b9869-7e39-4bf8-b3b8-1de7d18c22f9}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <Reference Include="Unquote">
-      <HintPath>..\packages\Unquote.2.2.2\lib\net40\Unquote.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-  </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

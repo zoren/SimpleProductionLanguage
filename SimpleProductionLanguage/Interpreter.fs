@@ -152,13 +152,13 @@ module Interpreter =
             else
                 leFix newFacts
 
-        member x.GetFacts() = !facts
+        member __.GetFacts() = !facts
 
-        member x.GetInstancesOfType iType = findInstancesByType iType !facts
+        member __.GetInstancesOfType iType = findInstancesByType iType !facts
 
-        member x.GetFreshInstanceId() = getMaxInstanceId !facts + 1 
+        member __.GetFreshInstanceId() = getMaxInstanceId !facts + 1 
         
-        member x.Add(fact:Fact) =
+        member __.Add(fact:Fact) =
             if Set.contains fact !userFacts
             then failwith "Fact already added"            
             let newUserFacts = Set.add fact !userFacts
@@ -168,7 +168,7 @@ module Interpreter =
             userFacts := newUserFacts
             Set.difference newFacts oldFacts
 
-        member x.Remove(fact:Fact) =
+        member __.Remove(fact:Fact) =
             if not <| Set.contains fact !userFacts
             then failwith "Could not remove fact not added"            
             let oldFacts = !facts
@@ -178,7 +178,7 @@ module Interpreter =
             userFacts := newUserFacts
             Set.difference oldFacts newFacts
         
-        member x.Modify(oldFact:Fact, newFact:Fact) =
+        member __.Modify(oldFact:Fact, newFact:Fact) =
             if not <| Set.contains oldFact !userFacts
             then failwith "Modify: Could not remove fact not added"
             if Set.contains newFact !userFacts

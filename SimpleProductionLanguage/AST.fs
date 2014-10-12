@@ -30,6 +30,11 @@ module AST =
 
     type Rule = Abstractions * Condition * Action
 
+    let rec abstrToSeq =
+      function
+      | Abstr(varName, instType) -> Seq.singleton (varName, instType)
+      | Abstrs(varName, instType, abstrs) -> Seq.append (Seq.singleton (varName, instType)) <| abstrToSeq abstrs
+
     let rec lvalDomExp =
         function
         | Constant _ -> Set.empty

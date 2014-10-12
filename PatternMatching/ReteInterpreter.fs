@@ -13,10 +13,7 @@ module ReteInterpreter =
         Array.get values fieldIndex  
     match test with
     | Comparison (e1, comp, e2) ->
-      let compFunc =
-        match comp with
-        | Eq -> valueEq
-      compFunc (evalExp e1) (evalExp e2)
+      compFunc comp (evalExp e1) (evalExp e2)
   let evalTests token = Seq.forall (evalTest token)
 
   type ActivationFlag = Activate | Deactivate
