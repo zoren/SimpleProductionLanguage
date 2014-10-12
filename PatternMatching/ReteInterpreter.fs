@@ -22,6 +22,11 @@ module ReteInterpreter =
   type ActivationFlag = Activate | Deactivate
 
   let processAlphaMem (flag:ActivationFlag) (alphaMem:AlphaMemory) (w:WME) =
+    match flag with
+    | Activate ->
+      alphaMem.wmes := w :: !alphaMem.wmes
+    | Deactivate ->
+      alphaMem.wmes := List.filter ((<>)w) !alphaMem.wmes
     let delta = ref []
     let rec joinNodeRight ({nodeType = Join jd} as node) (w : WME) : unit =
       let (Some({nodeType = Beta bm})) = !node.parent
@@ -70,6 +75,8 @@ module ReteInterpreter =
 // interpretation
   let processFact flag ((_, alphaNet):ReteGraph) (fact:Fact) : ConflictSet =
     let alphaMems = naiveFindAlphaMems alphaNet fact
+    if Seq.isEmpty alphaMems
+    then failwith "Could not find matching."
     let setRef = ref Set.empty
     for alphaMem in alphaMems do
       let cs = Seq.map (fun(prod,values) -> prod, List.map tokenElementToWME values)<| processAlphaMem flag alphaMem fact
