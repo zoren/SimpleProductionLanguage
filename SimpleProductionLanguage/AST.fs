@@ -27,6 +27,7 @@ module AST =
     type Action =
     // assign
         | FindOrCreate of InstanceType * (VariableName * Expression) list
+        | Assign of VariableName * VariableName * Expression
 
     type Rule = Abstractions * Condition * Action
 

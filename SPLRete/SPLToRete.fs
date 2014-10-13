@@ -10,14 +10,14 @@ module SPLToRete =
     | SimpleProductionLanguage.AST.BinOperator.Minus -> Minus
     | SimpleProductionLanguage.AST.BinOperator.Times -> Times
 
-  let ruleToPTree ((abstrs, cond, action) as rule:Rule) : PatternTree =
+  let ruleToPTree ((abstrs, cond, action) as rule:Rule) : PatternTree<_> =
     let abstrList = Seq.toList <| abstrToSeq abstrs
     let lvals = lvalDomRule rule
     let rec loopAbstr env =
       function
       | (varName, instType) :: abstrs ->
-        let pattern = "class", [|PatternValue <| String instType|]
-        PTree(pattern, [], [|loopAbstr (LValue.Variable varName :: env) abstrs|]) 
+        let pattern = "class", [|Anything IntType; PatternValue <| String instType|]
+        PatternNode(pattern, [|loopAbstr (LValue.Variable varName :: env) abstrs|]) 
       | [] ->
         let loopLVal env' lval =
           let var, fields = lvalInsideOut lval
@@ -26,6 +26,7 @@ module SPLToRete =
           ) (LValue.Variable var, env') fields
         let loopLVal' e l = snd <| loopLVal e l
         let env' = Set.fold loopLVal' env lvals
+        let lvalsInCond = Set.fold loopLVal' [] lvals
         let findIndex lval = List.findIndex ((=)lval) env'
         let rec convertExp =
           function
@@ -38,15 +39,23 @@ module SPLToRete =
           match cond with
           | True -> []
           | LessThan(el, er) -> [Comparison(convertExp el, Lt, convertExp er)]
-        let rec build =
+        let rec build runningEnv =
           function
-          | [lval] ->
-            let index = findIndex lval
-            let pattern = "assign", [| Anything IntType; PatternValue <| Int index; Anything IntType|]
-            PTree(pattern, [], [| Production <| sprintf "%A" action |])
-          | lval :: lvals ->
-            let index = findIndex lval
-            let pattern = "assign", [| Anything IntType; PatternValue <| Int index; Anything IntType|]
-            PTree(pattern, tests, [| build lvals |])            
-        build env
+          | [] -> Production (env', action)
+          | Proj(lval, cstic) :: lvals ->
+            let index = List.findIndex ((=)lval) runningEnv
+            let pattern = "assign", [| Anything IntType; PatternValue <| String cstic; Anything IntType|]
+            let targetWMEOffset =
+              match lval with
+              | Proj _ -> 2
+              | LValue.Variable _ -> 0
+            let comp = Comparison(Variable(0,0), Eq, Variable(index, targetWMEOffset))
+            let rest = 
+              match lvals with
+              | [] -> Seq.fold (fun n test -> TestNode(test, n)) (PatternNode(pattern, [| Production (env', action) |])) tests
+              | _ -> PatternNode(pattern, [| build (lval::runningEnv) lvals |])
+            TestNode(comp, rest)
+        build env lvalsInCond
     loopAbstr [] abstrList
+
+

@@ -17,9 +17,9 @@ module ReteBuilder =
     | Some vs -> Map.add k (v::vs) m
 
   // backpointer helpers
-  let alphaMemsInAlphaNetwork (alphaNet:AlphaNetwork) = Seq.map snd alphaNet
+  let alphaMemsInAlphaNetwork (alphaNet:AlphaNetwork<_>) = Seq.map snd alphaNet
 
-  let setBackPointers ((reteTopNode, alphaNet):ReteGraph) =
+  let setBackPointers ((reteTopNode, alphaNet):ReteGraph<_>) =
     let rec setParents node =
       for child in node.children do
           child.parent := Some node
@@ -32,21 +32,45 @@ module ReteBuilder =
     setParents reteTopNode
     Seq.iter setAlphaMem <| alphaMemsInAlphaNetwork alphaNet
 
-  let reteGraphFromPatternTrees ptrees : ReteGraph =
+  let rec collectTests =
+    function
+    | TestNode(test, ptree) ->
+      let tests, ptree' = collectTests ptree
+      test :: tests, ptree'
+    | ptree -> [], ptree
+
+  let reteGraphFromPatternTrees ptrees : ReteGraph<_> =
     let alphaMapRef = ref Map.empty
     let rec loop depth =
       function
-      | PatternTree.Production prodId -> mkRete (Production prodId) [||]
-      | PTree(pattern, tests, children) ->
-        let betaMem = mkBetaMem <| Array.map (loop (depth + 1)) children
-        let j = mkJoin (Array.ofSeq tests) [| betaMem |]
-        alphaMapRef := addOneToMany pattern (depth, j)  !alphaMapRef
-        j
-    let createAlphaNode (numberedJoinNodes: (int * ReteNode) list) =
+      | PatternTree.Production prodId -> [| mkRete (Production prodId) [||] |]
+      | TestNode _ -> failwith "internal error"
+      | PatternNode(pattern, children) ->
+        let testChildren, nonTestChildren = Array.partition (function (TestNode _) -> true | _ -> false) children
+        let nonTestJoins =
+          if Seq.isEmpty nonTestChildren
+          then Seq.empty
+          else
+            let betaMem = mkBetaMem <| Array.collect (loop (depth + 1)) nonTestChildren
+            let j = mkJoin [||] [| betaMem |]
+            alphaMapRef := addOneToMany pattern (depth, j)  !alphaMapRef
+            Seq.singleton j
+        let testJoins =
+          let f testNode =
+            let tests, ptree = collectTests testNode
+            let betaMem = mkBetaMem <| Array.collect (loop (depth + 1)) [|ptree|]
+            let j = mkJoin (Array.ofList tests) [| betaMem |]
+            alphaMapRef := addOneToMany pattern (depth, j)  !alphaMapRef
+            j
+          Seq.map f testChildren
+        let nodes = Seq.append nonTestJoins testJoins
+        Array.ofSeq nodes
+
+    let createAlphaNode (numberedJoinNodes: (int * ReteNode<_>) list) =
       let orderedJoinNodes = Seq.map snd <| List.sortBy (fun (depth, _) -> -depth) numberedJoinNodes
       mkAlphaMem <| Seq.toArray orderedJoinNodes
     let graph =
-      mkBetaMemDummy << Array.ofSeq <| Seq.map (fun ptree -> loop 0 ptree) ptrees,
+      mkBetaMemDummy << Array.ofSeq <| Seq.collect (fun ptree -> loop 0 ptree) ptrees,
         Map.toSeq <| Map.map (fun _ l -> createAlphaNode l) !alphaMapRef
     setBackPointers graph
     graph

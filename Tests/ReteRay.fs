@@ -17,15 +17,16 @@ module ReteRay =
     
 
   
-  open SPLRete
+  open SPLRete.SPLToRete
+  open SPLRete.Interpreter
   open SimpleProductionLanguage.Parser
+  open PatternMatching.ReteNetwork
   open PatternMatching.ReteBuilder
   open PatternMatching.PatternTree
   open PatternMatching.ReteInterpreter
-
   
   let parseRules s = runP SimpleProductionLanguage.Parser.rules s
-  
+
   [<Test>]
   let testTracing()=
     let s = @"
@@ -45,20 +46,47 @@ find_or_create Ray(x := r.x, y := r.y + 1)
 \ c:Circle, r:Ray ->
 (r.x - c.x) * (r.x - c.x) +
 (r.y - c.y) * (r.y - c.y) < c.radius ? 
-find_or_create Pixel(x := r.x, y := r.y, color := c.color)"
+find_or_create Pixel(x := r.x, y := r.y, color := c.color)
+"
     let rules = parseRules s
-    let pTrees = Seq.map SPLToRete.ruleToPTree rules
+    let pTrees = Array.ofSeq <| Seq.map ruleToPTree rules
     let rete = reteGraphFromPatternTrees pTrees
     let currentInstId = ref 0
+    let interp = new Interpreter(rete)
     let create className =
       let instId = !currentInstId
       currentInstId := !currentInstId + 1
       let fact = "class", [| Int instId; String className |]
-      ignore <| activate rete fact
+      ignore <| interp.Add fact
       instId
       
     let assign instId cstic value =
       let fact = "assign", [| Int instId; String cstic; Int value |]
-      ignore <| activate rete fact
+      ignore <| interp.Add fact
+
+    let setupId = create "Setup"
+    assign setupId "x" 3
+    assign setupId "y" 3
+
+    let colorId = create "Color"
+
+    let circleId = create "Circle"
+    assign circleId "x" 1
+    assign circleId "y" 1
+    assign circleId "radius" 1
+    assign circleId "color" colorId
+
+    let out = interp.GetFacts()
+
+    let pixels = interp.GetInstancesOfType("Pixel")
+    test <@ not <| Seq.isEmpty pixels @>
+
+    let findAssignments instId =
+        Map.ofSeq <| Seq.choose 
+            (function
+            | "assign",[|Int instId'; String field'; value'|] when instId = instId' -> Some (field', value')
+            | _ -> None) out
+    printf "%A" <| Seq.map findAssignments pixels
+
     ()
 

@@ -11,28 +11,28 @@ module ReteNetwork =
   
   type BetaMemory = { tokens : Token list ref }
 
-  type NodeType = 
+  type NodeType<'Production> = 
     | Beta of BetaMemory
-    | Join of JoinData
-    | Production of ProductionId
+    | Join of JoinData<'Production>
+    | Production of 'Production
 
-  and JoinData = {
-    alphaMem : AlphaMemory option ref
+  and JoinData<'Production> = {
+    alphaMem : AlphaMemory<'Production> option ref
     tests : Test array
     }
 
-  and AlphaMemory = {
+  and AlphaMemory<'Production> = {
     wmes : WME list ref
-    successors : ReteNode array
+    successors : ReteNode<'Production> array
   }
 
-  and ReteNode = {
-    nodeType : NodeType
-    children : ReteNode array
-    parent : ReteNode option ref
+  and ReteNode<'Production> = {
+    nodeType : NodeType<'Production>
+    children : ReteNode<'Production> array
+    parent : ReteNode<'Production> option ref
   }
 
-  type AlphaNetwork =
-    seq<Pattern * AlphaMemory>
+  type AlphaNetwork<'Production> =
+    seq<Pattern * AlphaMemory<'Production>>
 
-  type ReteGraph = ReteNode * AlphaNetwork
+  type ReteGraph<'Production> = ReteNode<'Production> * AlphaNetwork<'Production>

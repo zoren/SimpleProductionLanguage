@@ -43,6 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="SPLToRete.fs" />
+    <Compile Include="Interpreter.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PatternMatching\PatternMatching.fsproj">
