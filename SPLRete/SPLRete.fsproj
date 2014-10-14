@@ -44,6 +44,7 @@
   <ItemGroup>
     <Compile Include="SPLToRete.fs" />
     <Compile Include="Interpreter.fs" />
+    <Compile Include="SPLReteInterpreter.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PatternMatching\PatternMatching.fsproj">
