@@ -17,7 +17,7 @@ module SPLToRete =
       function
       | (varName, instType) :: abstrs ->
         let pattern = "class", [|Anything IntType; PatternValue <| String instType|]
-        PatternNode(pattern, [|loopAbstr (LValue.Variable varName :: env) abstrs|]) 
+        PatternNode(pattern, [|loopAbstr (LValue.Variable varName :: env) abstrs|])
       | [] ->
         let loopLVal env' lval =
           let var, fields = lvalInsideOut lval
@@ -41,21 +41,22 @@ module SPLToRete =
           | LessThan(el, er) -> [Comparison(convertExp el, Lt, convertExp er)]
         let rec build runningEnv =
           function
-          | [] -> Production (env', action)
-          | Proj(lval, cstic) :: lvals ->
-            let index = List.findIndex ((=)lval) runningEnv
+          | [] -> Production (runningEnv, action)
+          | Proj(LValue.Variable _ as lval, cstic) as curLVal :: lvals ->
+            let newEnv = curLVal::runningEnv
+            let index = List.findIndex ((=)lval) newEnv
             let pattern = "assign", [| Anything IntType; PatternValue <| String cstic; Anything IntType|]
             let targetWMEOffset =
               match lval with
               | Proj _ -> 2
               | LValue.Variable _ -> 0
-            let comp = Comparison(Variable(0,0), Eq, Variable(index, targetWMEOffset))
-            let rest = 
+            let objEqTest = Comparison(Variable(0,0), Eq, Variable(index, targetWMEOffset))
+            let pnode = build newEnv lvals
+            let testsNode =
               match lvals with
-              | [] -> Seq.fold (fun n test -> TestNode(test, n)) (PatternNode(pattern, [| Production (env', action) |])) tests
-              | _ -> PatternNode(pattern, [| build (lval::runningEnv) lvals |])
-            TestNode(comp, rest)
-        build env lvalsInCond
+              | [] ->
+                Seq.fold (fun n test -> TestNode(test, n)) pnode << List.rev <| objEqTest :: tests
+              | _ -> TestNode(objEqTest, pnode)
+            PatternNode(pattern, [| testsNode |])
+        build env (List.rev lvalsInCond)
     loopAbstr [] abstrList
-
-
