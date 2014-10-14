@@ -8,7 +8,7 @@ module AST =
     type Abstractions =
         | Abstr of VariableName * InstanceType
         | Abstrs of VariableName * InstanceType * Abstractions
-    
+
     type BinOperator = Plus | Minus | Times | Division
 
     type LValue =
@@ -19,15 +19,13 @@ module AST =
         | Constant of int
         | Deref of LValue
         | BinOp of Expression * BinOperator * Expression
-        
-    type Condition = 
+
+    type Condition =
         | True
         | LessThan of Expression * Expression
 
     type Action =
-    // assign
         | FindOrCreate of InstanceType * (VariableName * Expression) list
-        | Assign of VariableName * VariableName * Expression
 
     type Rule = Abstractions * Condition * Action
 
