@@ -51,7 +51,9 @@
   <ItemGroup>
     <Compile Include="ParserTests.fs" />
     <Compile Include="InterpreterTests.fs" />
-    <Compile Include="ReteRay.fs" />
+    <Compile Include="RayTracer.fs" />
+    <Compile Include="ReteSPLTests.fs" />
+    <None Include="TraceScript.fsx" />
     <None Include="app.config" />
     <Content Include="2dRayTraceRules.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
