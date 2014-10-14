@@ -6,30 +6,10 @@ module Interpreter =
   open PatternMatching.PatternTree
   open SimpleProductionLanguage.AST
 
-//  let findInstancesByType iType =
-//      Seq.choose 
-//          (function
-//          | Instance(instId, iType') when iType = iType' -> Some instId
-//          | _ -> None)
-//
-//  let evalAction facts (binding) (action:Action) : Fact seq =
-//      match action with
-//      | FindOrCreate(instType, assignments) ->
-//          let evaluatedAssignments = List.map (fun(var, exp) -> var, evalExp binding exp) assignments
-//          let instances = findInstances instType evaluatedAssignments facts
-//          match Seq.length instances with
-//          | 0 -> 
-//              let newInstId = getMaxInstanceId facts + 1 
-//              Seq.append 
-//                  (Seq.singleton <| Instance(newInstId, instType)) 
-//                  (Seq.map (fun (var, value) -> Assignment(newInstId,var, value)) evaluatedAssignments)
-//          | 1 -> Seq.empty
-//          | _ -> failwith "multi match"
-//  
   let evalOp =
-      function | Plus -> (+) | Minus -> (-) | Times -> (*) | Division -> (/)  
-  
-  let evalExp ((lvals : LValue list, binding: WME list) as env) e =
+      function | Plus -> (+) | Minus -> (-) | Times -> (*) | Division -> (/)
+
+  let evalExp (lvals : LValue list, binding: WME list) e =
     let rec loop =
       function
       | Constant i -> Int i
@@ -41,10 +21,10 @@ module Interpreter =
           | Proj _ -> 2
           | LValue.Variable _ -> 0
         Array.get values targetWMEOffset
-      | BinOp(e1,op,e2) -> 
+      | BinOp(e1,op,e2) ->
           let (Int i1) = loop e1
           let (Int i2) = loop e2
-          Int <| evalOp op i1 i2  
+          Int <| evalOp op i1 i2
     loop e
 
   type Interpreter(reteGraph : ReteGraph<LValue list * Action>) =
@@ -52,81 +32,73 @@ module Interpreter =
 
     let getFacts () = !facts
 
+    let getInstances() =
+      Seq.choose
+          (function
+          | "class",[|Int instId; String _|] -> Some instId
+          | _ -> None) <| getFacts()
+
     let findInstancesByType iType =
-      Seq.choose 
+      Seq.choose
           (function
           | "class",[|Int instId; String iType'|] when iType = iType' -> Some instId
           | _ -> None) <| getFacts()
-    
+
+    let findAssignments instId =
+      Seq.choose (function ("assign",[|Int instId'; String var; value|]) when instId' = instId -> Some(var, value) | _ -> None ) <| getFacts()
+
     let findInstances iType assignments =
       let facts = getFacts()
       let instFilter instId =
           Seq.forall (fun (var, value) -> Set.contains ("assign",[|Int instId; String var; value|]) facts) assignments
       Seq.filter instFilter <| findInstancesByType iType
 
-    let getMaxInstanceId() = 
-      let getInstId =
-        function 
-        | "class", [|Int instId; String _|] -> instId
-        | "assign", [|Int instId; String _; _|] -> instId                
-      let instIds = Seq.map getInstId <| getFacts()
-      Seq.max <| Seq.append (Seq.singleton 0) instIds
-  
+    let getMaxInstanceId() = Seq.max << Seq.append (Seq.singleton 0) <| getInstances()
+
     let evalAction env : Action -> seq<Fact> =
       function
       | FindOrCreate(instType, assignments) ->
         let evaluatedAssignments = List.map (fun(var, exp) -> var, evalExp env exp) assignments
-        let instances = findInstances instType evaluatedAssignments
+        let instances = Array.ofSeq <| findInstances instType evaluatedAssignments
+        let evalStr (var, value) = sprintf "%s = %A"  var value
         match Seq.length instances with
-        | 0 -> 
-          let instId = Int <| getMaxInstanceId () + 1 
-          let fact : Fact = "class", [|instId; String instType|]
-          Seq.ofList <| fact :: (List.map (fun(var, value) -> "assign", [|instId;String var; value|]) evaluatedAssignments)
+        | 0 ->
+          let instId = getMaxInstanceId () + 1
+          let fact : Fact = "class", [|Int instId; String instType|]
+          Seq.ofList <| fact :: (List.map (fun(var, value) -> "assign", [|Int instId;String var; value|]) evaluatedAssignments)
         | 1 -> Seq.empty
-        | _ -> failwith "multi match"
-      
+        | _ -> failwithf "multi match %A %s(%s)" instances instType (String.concat ", " <| Seq.map evalStr evaluatedAssignments)
+
     let evalConflict ((lvals : LValue list, action), wmes : WME list) =
       let env = lvals, wmes
       evalAction env action
 
-    let rec activateEval (fact:Fact) =
-      if Set.contains fact !facts
+    let rec activateEvalSet (inputFacts:Set<Fact>) =
+      if Set.isEmpty inputFacts
       then ()
-      let conflictSet = activate reteGraph fact
-      let newFacts = Set.ofSeq <| Seq.collect evalConflict conflictSet
-      facts := Set.union !facts newFacts
-      Seq.iter activateEval newFacts
+      else
+        let conflictSet = Set.ofSeq <| Seq.collect (activate reteGraph) inputFacts
+        facts := Set.unionMany[ !facts; inputFacts]
+        let update conflict =
+          let newFacts = evalConflict conflict
+          facts := Set.unionMany[ !facts; Set.ofSeq <| newFacts]
+          newFacts
+        let newFacts = Set.ofSeq <| Seq.collect update conflictSet
+        activateEvalSet newFacts
 
-//    let activateEval (fact:Fact) =
-//      let rec loop fact =
-//        if not << Set.contains fact <| getFacts()
-//        then
-//          let conflictSet = activate reteGraph fact
-//          let evalConflictSet ((lvals : LValue list, action), wmes : WME list) =
-//            let env = lvals, wmes
-//            let oldFacts = getFacts()
-//            let actionFacts = evalAction env action
-//            let newFacts = Set.union (getFacts()) (Set.ofSeq actionFacts)
-//            if oldFacts <> newFacts
-//            then
-//              facts := newFacts
-//             // let factsNotInSet = Seq.filter (fun f -> not <| Set.contains f oldFacts) actionFacts
-//              Seq.iter loop actionFacts
-//          Set.iter evalConflictSet conflictSet
-//      loop fact
-
-    
+    let activateEval fact = activateEvalSet <| Set.singleton fact
 
     member __.GetFacts() = getFacts()
-
+    member __.GetMaxInstId() = getMaxInstanceId()
     member __.GetInstancesOfType iType = findInstancesByType iType
+    member __.GetAssignments instId = findAssignments instId
 
     member __.Add(fact:Fact) =
       if Set.contains fact !facts
-      then failwith "Fact already added"            
+      then failwithf "Fact already added %A" fact
       activateEval fact
 
 //    member __.Remove(fact:Fact) =
 //      if not <| Set.contains fact !userFacts
-//      then failwith "Could not remove fact not added"            
+//      then failwith "Could not remove fact not added"
 //      failwith ""
