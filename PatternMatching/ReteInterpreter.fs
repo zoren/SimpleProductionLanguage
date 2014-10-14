@@ -16,12 +16,12 @@ module ReteInterpreter =
         let vl = evalExp el
         let vr = evalExp er
         let evalOp =
-            function | Plus -> (+) | Minus -> (-) | Times -> (*) | Division -> (/)  
+            function | Plus -> (+) | Minus -> (-) | Times -> (*) | Division -> (/)
         match vl, vr with
         | Int il, Int ir ->
           Int <| evalOp binop il ir
 //        | Double il, Double ir ->
-//        
+//
 //          Double <| evalOp binop il ir
     match test with
     | Comparison (e1, comp, e2) ->
@@ -81,21 +81,17 @@ module ReteInterpreter =
   let naiveFindAlphaMems (patMap:seq<Pattern * AlphaMemory<_>>) (fact:Fact) =
     Seq.choose (fun(pattern, alphaMem) -> if matchFactPattern pattern fact then Some alphaMem else None) patMap
 
-  let tokenElementToWME = 
+  let tokenElementToWME =
     function
     | WMETokenElement wme -> wme
 
 // interpretation
   let processFact flag ((_, alphaNet):ReteGraph<_>) (fact:Fact) =
     let alphaMems = naiveFindAlphaMems alphaNet fact
-//    if Seq.isEmpty alphaMems
-//    then failwith "Could not find matching."
     let setRef = ref Set.empty
     for alphaMem in alphaMems do
       let cs = Seq.map (fun(prod,values) -> prod, List.map tokenElementToWME values)<| processAlphaMem flag alphaMem fact
       let f set conflict =
-//        if Set.contains conflict set
-//        then failwithf "this seems wrong: %A" conflict
         Set.add conflict set
       setRef := Seq.fold f !setRef cs
     !setRef
