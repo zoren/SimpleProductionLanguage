@@ -77,37 +77,6 @@ find_or_create Element(n := e.n + 1)
   let mkTestNodes tests ptree = Seq.fold (fun pt t -> TestNode(t, pt)) ptree tests
 
   [<Test>]
-  let testPat()=
-    let s = @"
-\ s : Setup, e : Element ->
-e.x < s.n ?
-find_or_create Result()
-"
-    let rule = Seq.exactlyOne <| parseRules s
-    let ptree = ruleToPTree rule
-    let prod = SimpleProductionLanguage.AST.FindOrCreate("Result", [])
-    let prodNode = Production ([SimpleProductionLanguage.AST.Proj (SimpleProductionLanguage.AST.Variable "s","n");SimpleProductionLanguage.AST.Proj (SimpleProductionLanguage.AST.Variable "e","x"); SimpleProductionLanguage.AST.Variable "e";SimpleProductionLanguage.AST.Variable "s"], prod)
-    let expectedPTree =
-      mkPatternNode(mkClassPat "Setup") <<
-        mkPatternNode (mkClassPat "Element") <<
-          mkPatternNode (mkCsticPat "x") << // e.x
-            mkTestNodes[Comparison(Variable(0,0), Eq, Variable (1,0))] <<
-              mkPatternNode (mkCsticPat "n") << // s.n
-                mkTestNodes[Comparison(Variable(0,0), Eq, Variable (3,0))] <|
-                  (mkTestNodes [Comparison(Variable(1,2), Lt, Variable (0,2))] prodNode)
-    let reteGraph = reteGraphFromPatternTrees [| expectedPTree |]
-    let interp = new Interpreter(reteGraph)
-    interp.Add ("class", [| Int 0; String "Setup"|])
-    interp.Add ("assign", [| Int 0; String "n"; Int 1|])
-    interp.Add ("class", [| Int 1; String "Element"|])
-    interp.Add ("assign", [| Int 1; String "x"; Int 0|])
-    let instances = interp.GetInstancesOfType "Result"
-    test <@ Seq.length instances = 1 @>
-    test <@ expectedPTree = ptree @>
-    printf "\n\nexpected:\n%A\n" expectedPTree
-    printf "actual:\n%A" ptree
-
-  [<Test>]
   let testTracingManualRayCreation()=
     let s = @"
 \ c:Circle, r:Ray ->

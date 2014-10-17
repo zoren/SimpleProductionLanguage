@@ -4,11 +4,27 @@ module SPLToRete =
   open SimpleProductionLanguage.AST
   open PatternMatching.PatternTree
 
-  let convertBinop =
-    function
-    | SimpleProductionLanguage.AST.BinOperator.Plus -> Plus
-    | SimpleProductionLanguage.AST.BinOperator.Minus -> Minus
-    | SimpleProductionLanguage.AST.BinOperator.Times -> Times
+  let compExp env exp =
+    let rec loop =
+      function
+      | Expression.Constant i -> fun _ -> Int i
+      | Deref lval ->
+        let index = List.findIndex ((=)lval) env
+        fun testEnv -> testEnv {tokenIndex = index; fieldIndex = 2}
+      | Expression.BinOp(el, binop, er) ->
+        let cel = loop el
+        let cer = loop er
+        let opFunc =
+          match binop with
+          | Plus -> (+)
+          | Minus -> (-)
+          | Times -> (*)
+          | Division -> (/)
+        fun testEnv ->
+          let vl = getInt <| cel testEnv
+          let vr = getInt <| cer testEnv
+          Int <| opFunc vl vr
+    loop exp
 
   let ruleToPTree ((abstrs, cond, action) as rule:Rule) : PatternTree<_> =
     let abstrList = Seq.toList <| abstrToSeq abstrs
@@ -27,18 +43,18 @@ module SPLToRete =
         let loopLVal' e l = snd <| loopLVal e l
         let env' = Set.fold loopLVal' env lvals
         let lvalsInCond = Set.fold loopLVal' [] lvals
-        let findIndex lval = List.findIndex ((=)lval) env'
-        let rec convertExp =
-          function
-          | Expression.Constant i -> Const <| Int i
-          | Deref lval ->
-            Variable(findIndex lval,2)
-          | Expression.BinOp(el, binop, e2) ->
-            BinOp(convertExp el, convertBinop binop, convertExp e2)
+
         let tests =
           match cond with
           | True -> []
-          | LessThan(el, er) -> [Comparison(convertExp el, Lt, convertExp er)]
+          | LessThan(el, er) ->
+            let cel = compExp env' el
+            let cer = compExp env' er
+            let lessThan (testEnv:TestEnvironment) =
+              let vl = getInt <| cel testEnv
+              let vr = getInt <| cer testEnv
+              vl < vr
+            [lessThan]
         let rec build runningEnv =
           function
           | [] -> Production (runningEnv, action)
@@ -50,7 +66,10 @@ module SPLToRete =
               match lval with
               | Proj _ -> 2
               | LValue.Variable _ -> 0
-            let objEqTest = Comparison(Variable(0,0), Eq, Variable(index, targetWMEOffset))
+            let objEqTest (testEnv:TestEnvironment) =
+              let thisVal = getInt <| testEnv {tokenIndex = 0; fieldIndex = 0}
+              let tokenVal = getInt <| testEnv {tokenIndex = index; fieldIndex = targetWMEOffset}
+              thisVal = tokenVal
             let pnode = build newEnv lvals
             let testsNode =
               match lvals with

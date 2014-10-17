@@ -22,8 +22,8 @@ module Interpreter =
           | LValue.Variable _ -> 0
         Array.get values targetWMEOffset
       | BinOp(e1,op,e2) ->
-          let (Int i1) = loop e1
-          let (Int i2) = loop e2
+          let i1 = getInt <| loop e1
+          let i2 = getInt <| loop e2
           Int <| evalOp op i1 i2
     loop e
 
