@@ -21,6 +21,14 @@ module SPLInterpreter =
       ignore <| interp.Add fact
       instId
 
+    member __.remove instId className =
+      let fact = "class", [| Int instId; String className |]
+      ignore <| interp.Remove fact
+
     member __.assign instId cstic value =
       let fact = "assign", [| Int instId; String cstic; Int value |]
       ignore <| interp.Add fact
+
+    member __.unassign instId cstic value =
+      let fact = "assign", [| Int instId; String cstic; Int value |]
+      ignore <| interp.Remove fact

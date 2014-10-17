@@ -53,9 +53,7 @@ find_or_create C(c := b.b + 1)
     let assignments = interp.Interpreter.GetAssignments <| Seq.exactlyOne cs
     test <@ Seq.toArray assignments = [|"c", Int 1|] @>
 
-  [<Test>]
-  let testList()=
-    let s = @"
+  let listRules = @"
 \ s: Setup ->
 true ?
 find_or_create Element(n := 0)
@@ -64,12 +62,43 @@ find_or_create Element(n := 0)
 e.n < s.n ?
 find_or_create Element(n := e.n + 1)
 "
-    let interp = createSPLInterp s
+
+  [<Test>]
+  let testList()=
+    let interp = createSPLInterp listRules
 
     let setup = interp.create "Setup"
     interp.assign setup "n" 5
     let cs = interp.Interpreter.GetInstancesOfType("Element")
     test <@ Seq.length cs = 6 @>
+
+  [<Test>]
+  let testListDeactivateFail()=
+    let interp = createSPLInterp listRules
+
+    let setup = interp.create "Setup"
+    interp.assign setup "n" 5
+    raises <@ interp.unassign setup "n" 6 @>
+
+  [<Test>]
+  let testListUnassign()=
+    let interp = createSPLInterp listRules
+
+    let setup = interp.create "Setup"
+    interp.assign setup "n" 5
+    interp.unassign setup "n" 5
+    let cs = interp.Interpreter.GetInstancesOfType("Element")
+    test <@ Seq.length cs = 1 @>
+
+  [<Test>]
+  let testListRemoveInstance()=
+    let interp = createSPLInterp listRules
+
+    let setup = interp.create "Setup"
+    interp.assign setup "n" 5
+    interp.remove setup "Setup"
+    let cs = interp.Interpreter.GetInstancesOfType("Element")
+    test <@ Seq.length cs = 0 @>
 
   let mkClassPat className = "class",[|Anything IntType; PatternValue <| String className|]
   let mkCsticPat cstic = "assign",[|Anything IntType; PatternValue <| String cstic; Anything IntType|]

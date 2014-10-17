@@ -55,23 +55,36 @@ module Interpreter =
 
     let getMaxInstanceId() = Seq.max << Seq.append (Seq.singleton 0) <| getInstances()
 
-    let evalAction env : Action -> seq<Fact> =
+    let evalStr (var, value) = sprintf "%s = %A"  var value
+
+    let findInstancesByTypeAndAssignments env instType assignments =
+      let evaluatedAssignments = List.map (fun(var, exp) -> var, evalExp env exp) assignments
+      findInstances instType evaluatedAssignments, evaluatedAssignments
+
+    let getInstanceFacts instId instType evaluatedAssignments =
+      let fact : Fact = "class", [|Int instId; String instType|]
+      Seq.ofList <| fact :: (List.map (fun(var, value) -> "assign", [|Int instId;String var; value|]) evaluatedAssignments)
+
+    let activateAction env : Action -> seq<Fact> =
       function
       | FindOrCreate(instType, assignments) ->
-        let evaluatedAssignments = List.map (fun(var, exp) -> var, evalExp env exp) assignments
-        let instances = Array.ofSeq <| findInstances instType evaluatedAssignments
-        let evalStr (var, value) = sprintf "%s = %A"  var value
+        let instances, evaluatedAssignments = findInstancesByTypeAndAssignments env instType assignments
         match Seq.length instances with
         | 0 ->
           let instId = getMaxInstanceId () + 1
-          let fact : Fact = "class", [|Int instId; String instType|]
-          Seq.ofList <| fact :: (List.map (fun(var, value) -> "assign", [|Int instId;String var; value|]) evaluatedAssignments)
+          getInstanceFacts instId instType evaluatedAssignments
         | 1 -> Seq.empty
         | _ -> failwithf "multi match %A %s(%s)" instances instType (String.concat ", " <| Seq.map evalStr evaluatedAssignments)
 
-    let evalConflict ((lvals : LValue list, action), wmes : WME list) =
-      let env = lvals, wmes
-      evalAction env action
+    let deactivateAction env : Action -> seq<Fact> =
+      function
+      | FindOrCreate(instType, assignments) ->
+        let instances, evaluatedAssignments = findInstancesByTypeAndAssignments env instType assignments
+        match Seq.toList instances with
+        | [] -> failwithf "could not find instance"
+        | [instId] ->
+          getInstanceFacts instId instType evaluatedAssignments
+        | _ -> failwithf "multi match %A %s(%s)" instances instType (String.concat ", " <| Seq.map evalStr evaluatedAssignments)
 
     let rec activateEvalSet (inputFacts:Set<Fact>) =
       if Set.isEmpty inputFacts
@@ -79,14 +92,27 @@ module Interpreter =
       else
         let conflictSet = Set.ofSeq <| Seq.collect (activate reteGraph) inputFacts
         facts := Set.unionMany[ !facts; inputFacts]
-        let update conflict =
-          let newFacts = evalConflict conflict
+        let update ((lvals : LValue list, action), wmes : WME list) =
+          let env = lvals, wmes
+          let newFacts = activateAction env action
           facts := Set.unionMany[ !facts; Set.ofSeq <| newFacts]
           newFacts
         let newFacts = Set.ofSeq <| Seq.collect update conflictSet
         activateEvalSet newFacts
 
-    let activateEval fact = activateEvalSet <| Set.singleton fact
+    let rec deactivateEvalSet (inputFacts:Set<Fact>) =
+      if Set.isEmpty inputFacts
+      then ()
+      else
+        let conflictSet = Set.ofSeq <| Seq.collect (deactivate reteGraph) inputFacts
+        let update ((lvals : LValue list, action), wmes : WME list) =
+          let env = lvals, wmes
+          let factsToRemove = Set.ofSeq <| deactivateAction env action
+          factsToRemove
+        let newFactsToRemove = Set.ofSeq <| Seq.collect update conflictSet
+        deactivateEvalSet newFactsToRemove
+        facts := Set.difference !facts newFactsToRemove
+        facts := Set.difference !facts inputFacts
 
     member __.GetFacts() = getFacts()
     member __.GetMaxInstId() = getMaxInstanceId()
@@ -96,9 +122,9 @@ module Interpreter =
     member __.Add(fact:Fact) =
       if Set.contains fact !facts
       then failwithf "Fact already added %A" fact
-      activateEval fact
+      activateEvalSet <| Set.singleton fact
 
-//    member __.Remove(fact:Fact) =
-//      if not <| Set.contains fact !userFacts
-//      then failwith "Could not remove fact not added"
-//      failwith ""
+    member __.Remove(fact:Fact) =
+      if not <| Set.contains fact !facts
+      then failwith "Could not remove fact not added"
+      deactivateEvalSet <| Set.singleton fact
