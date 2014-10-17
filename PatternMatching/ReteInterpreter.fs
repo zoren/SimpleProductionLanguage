@@ -8,9 +8,9 @@ module ReteInterpreter =
     let (WMETokenElement (_, values)) = List.nth token var.tokenIndex
     Array.get values var.fieldIndex
 
-  let evalTests token tests =
+  let evalTest token test =
     let lookup = lookupToken token
-    Seq.forall (fun test -> test lookup) tests
+    test lookup
 
   type ActivationFlag = Activate | Deactivate
 
@@ -28,13 +28,13 @@ module ReteInterpreter =
     let rec joinNodeRight ({nodeType = Join jd} as node) (w : WME) : unit =
       let (Some({nodeType = Beta bm})) = !node.parent
       for t in !bm.tokens do
-          if evalTests ((WMETokenElement w)::t) jd.tests then
+          if evalTest ((WMETokenElement w)::t) jd.test then
             for child in node.children do
               leftActivation child t (Some <| WMETokenElement w)
     and joinNodeLeft  ({nodeType = Join jd} as node) (token : Token) : unit =
       let alphaMem = Option.get !jd.alphaMem
       for w in !alphaMem.wmes do
-          if evalTests ((WMETokenElement w) :: token) jd.tests then
+          if evalTest ((WMETokenElement w) :: token) jd.test then
             for child in node.children do
               leftActivation child token (Some <| WMETokenElement w)
     and betaMemoryLeft  ({nodeType = Beta betaMem} as node) (t:Token) (tokElement : TokenElement) : unit =

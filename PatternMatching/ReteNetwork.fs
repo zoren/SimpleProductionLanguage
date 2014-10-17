@@ -18,7 +18,7 @@ module ReteNetwork =
 
   and JoinData<'Production> = {
     alphaMem : AlphaMemory<'Production> option ref
-    tests : Test array
+    test : Test
     }
 
   and AlphaMemory<'Production> = {

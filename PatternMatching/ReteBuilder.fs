@@ -7,7 +7,7 @@ module ReteBuilder =
   let mkRete nodeType children = {nodeType = nodeType; children = children; parent = ref None}
   let mkBetaMem children = mkRete (Beta {tokens = ref []}) children
   let mkBetaMemDummy children = mkRete (Beta {tokens = ref [[]]}) children
-  let mkJoin tests children = mkRete (Join {tests = tests;alphaMem = ref None}) children
+  let mkJoin test children = mkRete (Join {test = test;alphaMem = ref None}) children
 
   let mkAlphaMem children = {wmes = ref [];successors = children}
 
@@ -52,14 +52,15 @@ module ReteBuilder =
           then Seq.empty
           else
             let betaMem = mkBetaMem <| Array.collect (loop (depth + 1)) nonTestChildren
-            let j = mkJoin [||] [| betaMem |]
+            let j = mkJoin (fun _ -> true) [| betaMem |]
             alphaMapRef := addOneToMany pattern (depth, j)  !alphaMapRef
             Seq.singleton j
         let testJoins =
           let f testNode =
             let tests, ptree = collectTests testNode
             let betaMem = mkBetaMem <| Array.collect (loop (depth + 1)) [|ptree|]
-            let j = mkJoin (Array.ofList tests) [| betaMem |]
+            let test testEnv = Seq.forall (fun test -> test testEnv) tests
+            let j = mkJoin test [| betaMem |]
             alphaMapRef := addOneToMany pattern (depth, j)  !alphaMapRef
             j
           Seq.map f testChildren
