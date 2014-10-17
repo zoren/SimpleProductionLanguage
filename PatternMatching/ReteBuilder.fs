@@ -17,7 +17,7 @@ module ReteBuilder =
     | Some vs -> Map.add k (v::vs) m
 
   // backpointer helpers
-  let alphaMemsInAlphaNetwork (alphaNet:AlphaNetwork<_>) = Seq.map snd alphaNet
+  let alphaMemsInAlphaNetwork (alphaNet:AlphaNetwork<_>) = Seq.map snd <| Map.toSeq (snd alphaNet)
 
   let setBackPointers ((reteTopNode, alphaNet):ReteGraph<_>) =
     let rec setParents node =
@@ -70,8 +70,16 @@ module ReteBuilder =
     let createAlphaNode (numberedJoinNodes: (int * ReteNode<_>) list) =
       let orderedJoinNodes = Seq.map snd <| List.sortBy (fun (depth, _) -> -depth) numberedJoinNodes
       mkAlphaMem <| Seq.toArray orderedJoinNodes
+
+    let currentAlphaMemId = ref 0
+    let buildAlphaNet ((l,nodeMap): (Pattern * AlphaMemoryId) list * Map<AlphaMemoryId, AlphaMemory<'Production>>) pat numberedReteNodes =
+      let alphaMemId = !currentAlphaMemId
+      currentAlphaMemId := !currentAlphaMemId + 1
+      let alphaNode = createAlphaNode numberedReteNodes
+      (pat, alphaMemId) :: l, Map.add alphaMemId alphaNode nodeMap
+    let patList, alphaMemMap = Map.fold buildAlphaNet ([], Map.empty) !alphaMapRef
+    let alphaNetwork = patList :> seq<Pattern * AlphaMemoryId>, alphaMemMap
     let graph =
-      mkBetaMemDummy << Array.ofSeq <| Seq.collect (fun ptree -> loop 0 ptree) ptrees,
-        Map.toSeq <| Map.map (fun _ l -> createAlphaNode l) !alphaMapRef
+      mkBetaMemDummy << Array.ofSeq <| Seq.collect (fun ptree -> loop 0 ptree) ptrees, alphaNetwork
     setBackPointers graph
     graph

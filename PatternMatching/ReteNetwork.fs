@@ -32,7 +32,9 @@ module ReteNetwork =
     parent : ReteNode<'Production> option ref
   }
 
+  type AlphaMemoryId = int
+
   type AlphaNetwork<'Production> =
-    seq<Pattern * AlphaMemory<'Production>>
+    seq<Pattern * AlphaMemoryId> * Map<AlphaMemoryId, AlphaMemory<'Production>>
 
   type ReteGraph<'Production> = ReteNode<'Production> * AlphaNetwork<'Production>

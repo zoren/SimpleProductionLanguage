@@ -136,3 +136,20 @@ find_or_create Pixel(x := r.x, y := r.y, color := c.color)
   let testTracing()=
     let pixels = trace (10, 10) (5,5) 1
     test <@ Seq.length pixels = 1@>
+
+  let modifyTestRules = @"
+\ o: Object ->
+  1 < o.x ? find_or_create GTOne()
+\ o: Object ->
+  o.x < 3 ? find_or_create LTThree()
+  "
+
+  [<Test>]
+  let modify()=
+    let interp = createSPLInterp modifyTestRules
+
+    let objectId = interp.create "Object"
+    interp.assign objectId "x" 2
+
+    let pixels = Array.ofSeq <| interp.Interpreter.GetInstancesOfType("Pixel")
+    test <@ not <| Seq.isEmpty pixels @>

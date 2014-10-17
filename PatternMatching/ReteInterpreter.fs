@@ -12,7 +12,7 @@ module ReteInterpreter =
     let lookup = lookupToken token
     test lookup
 
-  type ActivationFlag = Activate | Deactivate
+  type ActivationFlag = Activate | Deactivate | Modify of newWME : WME
 
   let processAlphaMem (flag:ActivationFlag) (alphaMem:AlphaMemory<'Production>) (w:WME) : ('Production * Token) list=
     match flag with
@@ -63,16 +63,20 @@ module ReteInterpreter =
       joinNodeRight child w
     !delta
 
-  let naiveFindAlphaMems (patMap:seq<Pattern * AlphaMemory<_>>) (fact:Fact) =
+  let naiveFindAlphaMemIds patMap (fact:Fact) =
     Seq.choose (fun(pattern, alphaMem) -> if matchFactPattern pattern fact then Some alphaMem else None) patMap
+
+  let naiveFindAlphaMems (alphaNet:AlphaNetwork<_>) (fact:Fact) =
+    let patMap, alphaMemMap = alphaNet
+    let alphaMemIds = Seq.choose (fun(pattern, alphaMem) -> if matchFactPattern pattern fact then Some alphaMem else None) patMap
+    Seq.map (fun alphaMemId -> Map.find alphaMemId alphaMemMap) alphaMemIds
+
 
   let tokenElementToWME =
     function
     | WMETokenElement wme -> wme
 
-// interpretation
-  let processFact flag ((_, alphaNet):ReteGraph<_>) (fact:Fact) =
-    let alphaMems = naiveFindAlphaMems alphaNet fact
+  let processWithFlag flag alphaMems (fact:Fact) =
     let setRef = ref Set.empty
     for alphaMem in alphaMems do
       let cs = Seq.map (fun(prod,values) -> prod, List.map tokenElementToWME values)<| processAlphaMem flag alphaMem fact
@@ -80,6 +84,32 @@ module ReteInterpreter =
         Set.add conflict set
       setRef := Seq.fold f !setRef cs
     !setRef
+
+  let processFact flag ((_, alphaNet):ReteGraph<_>) (fact:Fact) =
+    let patMap, alphaMemMap = alphaNet
+    let processAlphaMemIds flag alphaMemIds =
+      let alphaMems = Seq.map (fun alphaMemId -> Map.find alphaMemId alphaMemMap) alphaMemIds
+      processWithFlag flag alphaMems
+    match flag with
+    | Activate  ->
+      let alphaMemIds = naiveFindAlphaMemIds patMap fact
+      processAlphaMemIds flag alphaMemIds fact, Set.empty, Set.empty
+    | Deactivate ->
+      let alphaMemIds = naiveFindAlphaMemIds patMap fact
+      Set.empty, Set.empty, processAlphaMemIds flag alphaMemIds fact
+    | Modify newFact ->
+      let oldFact = fact
+      let oldAlphaMemIdSet = Set.ofSeq <| naiveFindAlphaMemIds patMap oldFact
+      let newAlphaMemIdSet = Set.ofSeq <| naiveFindAlphaMemIds patMap newFact
+
+      let stillActiveIdSet = Set.intersect newAlphaMemIdSet oldAlphaMemIdSet
+      let toActivate = Set.difference newAlphaMemIdSet oldAlphaMemIdSet
+      let toDeactivate = Set.difference oldAlphaMemIdSet newAlphaMemIdSet
+
+      processAlphaMemIds Activate toActivate fact, processAlphaMemIds flag stillActiveIdSet fact, processAlphaMemIds Deactivate toDeactivate fact
+
+//      let alphaMems = Set.ofSeq <| naiveFindAlphaMems alphaNet fact
+//      processWithFlag flag alphaMems
 
   let activate (graph:ReteGraph<_>) (fact:Fact) = processFact Activate graph fact
 

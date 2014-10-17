@@ -124,6 +124,12 @@ module Interpreter =
       then failwithf "Fact already added %A" fact
       activateEvalSet <| Set.singleton fact
 
+    member __.Modify(oldFact:Fact, newFact:Fact) =
+      if not <| Set.contains oldFact !facts
+      then failwith "Could not modify, fact not added"
+      failwith ""
+      //deactivateEvalSet <| Set.singleton fact
+
     member __.Remove(fact:Fact) =
       if not <| Set.contains fact !facts
       then failwith "Could not remove fact not added"
