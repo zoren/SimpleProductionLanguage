@@ -5,11 +5,11 @@ module ReteBuilder =
   open PatternMatching.ReteNetwork
 
   let mkRete nodeType children = {nodeType = nodeType; children = children; parent = ref None}
-  let mkBetaMem children = mkRete (Beta {tokens = ref []}) children
-  let mkBetaMemDummy children = mkRete (Beta {tokens = ref [[]]}) children
+  let mkBetaMem children = mkRete (Beta {tokens = ref Set.empty}) children
+  let mkBetaMemDummy children = mkRete (Beta {tokens = ref <| Set.singleton []}) children
   let mkJoin test children = mkRete (Join {test = test;alphaMem = ref None}) children
 
-  let mkAlphaMem children = {wmes = ref [];successors = children}
+  let mkAlphaMem children = {wmes = ref Set.empty;successors = children}
 
   let addOneToMany k v m =
     match Map.tryFind k m with

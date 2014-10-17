@@ -17,13 +17,13 @@ module ReteInterpreter =
   let processAlphaMem (flag:ActivationFlag) (alphaMem:AlphaMemory<'Production>) (w:WME) : ('Production * Token) list=
     match flag with
     | Activate ->
-      if List.exists ((=)w) !alphaMem.wmes
+      if Set.contains w !alphaMem.wmes
       then failwithf "already added %A" w
-      alphaMem.wmes := w :: !alphaMem.wmes
+      alphaMem.wmes := Set.add w !alphaMem.wmes
     | Deactivate ->
-      if not <| List.exists ((=)w) !alphaMem.wmes
+      if not <| Set.contains w !alphaMem.wmes
       then failwith "not added"
-      alphaMem.wmes := List.filter ((<>)w) !alphaMem.wmes
+      alphaMem.wmes := Set.remove w !alphaMem.wmes
     let delta = ref []
     let rec joinNodeRight ({nodeType = Join jd} as node) (w : WME) : unit =
       let (Some({nodeType = Beta bm})) = !node.parent
@@ -41,7 +41,8 @@ module ReteInterpreter =
       let newToken = tokElement :: t
       match flag with
       | Activate ->
-        betaMem.tokens := newToken :: !betaMem.tokens
+        // todo maybe check and warn if token is already added?
+        betaMem.tokens := Set.add newToken !betaMem.tokens
       | Deactivate ->
         let tokenElementToRemove = tokElement
         let tokenFilter tokenElement =
@@ -49,7 +50,7 @@ module ReteInterpreter =
           | WMETokenElement wme ->
             match tokenElement with
             | WMETokenElement wme' -> wme = wme'
-        betaMem.tokens := List.filter (fun token -> not <| List.exists tokenFilter token) !betaMem.tokens
+        betaMem.tokens := Set.filter (fun token -> not <| List.exists tokenFilter token) !betaMem.tokens
       for child in node.children do
         leftActivation child newToken None
     and leftActivation (node:ReteNode<_>) (t:Token) (tokElementOpt:TokenElement option) : unit =

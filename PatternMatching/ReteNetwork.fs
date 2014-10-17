@@ -9,7 +9,7 @@ module ReteNetwork =
 //    | ListTokenElement of WME
   type Token = TokenElement list
 
-  type BetaMemory = { tokens : Token list ref }
+  type BetaMemory = { tokens : Set<Token> ref }
 
   type NodeType<'Production> =
     | Beta of BetaMemory
@@ -22,7 +22,7 @@ module ReteNetwork =
     }
 
   and AlphaMemory<'Production> = {
-    wmes : WME list ref
+    wmes : Set<WME> ref
     successors : ReteNode<'Production> array
   }
 
