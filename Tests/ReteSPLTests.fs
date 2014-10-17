@@ -73,6 +73,18 @@ find_or_create Element(n := e.n + 1)
     test <@ Seq.length cs = 6 @>
 
   [<Test>]
+  let testListPerformance()=
+    let interp = createSPLInterp listRules
+    let numberOfElements = 6400
+    let setup = interp.create "Setup"
+    let sw = System.Diagnostics.Stopwatch.StartNew()
+    interp.assign setup "n" (numberOfElements - 1)
+    sw.Stop()
+    printf "%i" sw.ElapsedMilliseconds
+    let cs = interp.Interpreter.GetInstancesOfType("Element")
+    test <@ Seq.length cs = numberOfElements @>
+
+  [<Test>]
   let testListDeactivateFail()=
     let interp = createSPLInterp listRules
 
