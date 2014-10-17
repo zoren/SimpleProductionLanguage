@@ -9,6 +9,11 @@ module Interpreter =
         | Int of int
         | InstanceRef of InstanceId
 
+    let getInt =
+      function
+        | (Int i) -> i
+        | v -> failwithf "Runtime type error: value not of the expected type %A" v
+
     type Fact =
         | Instance of InstanceId * InstanceType
         | Assignment of InstanceId * FieldName * RTValue
@@ -79,17 +84,17 @@ module Interpreter =
         function
         | Constant i -> Int i
         | Deref lval -> Map.find lval binding
-        | BinOp(e1,op,e2) -> 
-            let (Int i1) = evalExp binding e1
-            let (Int i2) = evalExp binding e2
+        | BinOp(e1,op,e2) ->
+            let i1 = getInt <| evalExp binding e1
+            let i2 = getInt <| evalExp binding e2
             Int <| evalOp op i1 i2
 
     let evalCond (binding:Map<LValue,RTValue>) (cond:Condition) =
         match cond with
         | True -> true
         | LessThan(e1, e2) ->
-            let (Int i1) = evalExp binding e1
-            let (Int i2) = evalExp binding e2        
+            let i1 = getInt <| evalExp binding e1
+            let i2 = getInt <| evalExp binding e2
             i1 < i2
 
     let findInstances iType assignments facts =
