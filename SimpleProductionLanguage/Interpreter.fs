@@ -5,7 +5,7 @@ open SimpleProductionLanguage.AST
 module Interpreter =
     type InstanceId = int
 
-    type RTValue = 
+    type RTValue =
         | Int of int
         | InstanceRef of InstanceId
 
@@ -19,13 +19,13 @@ module Interpreter =
         | Assignment of InstanceId * FieldName * RTValue
 
     let findInstancesByType iType =
-        Seq.choose 
+        Seq.choose
             (function
             | Instance(instId, iType') when iType = iType' -> Some instId
             | _ -> None)
 
     let findAssignments instId field =
-        Seq.choose 
+        Seq.choose
             (function
             | Assignment(instId', field', value') when instId = instId' && field = field' -> Some value'
             | _ -> None)
@@ -37,7 +37,7 @@ module Interpreter =
             | Abstrs(var, iType, abstrs') ->
                 let bindings = bindFactsToAbstr abstrs'
                 let instBindings = findInstancesByType iType facts
-                Seq.collect (fun instId -> Seq.map (fun binding -> Map.add var instId binding) bindings) instBindings                
+                Seq.collect (fun instId -> Seq.map (fun binding -> Map.add var instId binding) bindings) instBindings
         bindFactsToAbstr abstrs
 
     let rec getType var abstrs =
@@ -64,7 +64,7 @@ module Interpreter =
                     Seq.map (fun value -> Map.add lval value binding) assignedValues
                 Seq.collect f maps
         let lvalDom = lvalDomRule rule
-        let rec binder accMap lvals =               
+        let rec binder accMap lvals =
             match lvals with
             | [] -> Seq.singleton accMap
             | lval::lvals ->
@@ -102,11 +102,11 @@ module Interpreter =
             Seq.forall (fun (var, value) -> Set.contains (Assignment(instId, var, value)) facts) assignments
         Seq.filter instFilter <| findInstancesByType iType facts
 
-    let getMaxInstanceId facts = 
+    let getMaxInstanceId facts =
         let getInstId =
-            function 
+            function
             | Instance(instId, _) -> instId
-            | Assignment(instId, _, _) -> instId                
+            | Assignment(instId, _, _) -> instId
         let instIds = Seq.map getInstId facts
         Seq.max <| Seq.append (Seq.singleton 0) instIds
 
@@ -116,10 +116,10 @@ module Interpreter =
             let evaluatedAssignments = List.map (fun(var, exp) -> var, evalExp binding exp) assignments
             let instances = findInstances instType evaluatedAssignments facts
             match Seq.length instances with
-            | 0 -> 
-                let newInstId = getMaxInstanceId facts + 1 
-                Seq.append 
-                    (Seq.singleton <| Instance(newInstId, instType)) 
+            | 0 ->
+                let newInstId = getMaxInstanceId facts + 1
+                Seq.append
+                    (Seq.singleton <| Instance(newInstId, instType))
                     (Seq.map (fun (var, value) -> Assignment(newInstId,var, value)) evaluatedAssignments)
             | 1 -> Seq.empty
             | _ -> failwith "multi match"
@@ -136,7 +136,7 @@ module Interpreter =
 
     let evalRules facts rules =
         let rec loop facts =
-            let newFacts = Seq.fold evalRule facts rules        
+            let newFacts = Seq.fold evalRule facts rules
             if newFacts = facts
             then newFacts
             else loop newFacts
@@ -153,7 +153,7 @@ module Interpreter =
             let newFacts = Set.union oldFacts addedFacts
             if oldFacts = newFacts
             then
-                newFacts 
+                newFacts
             else
                 leFix newFacts
 
@@ -161,11 +161,11 @@ module Interpreter =
 
         member __.GetInstancesOfType iType = findInstancesByType iType !facts
 
-        member __.GetFreshInstanceId() = getMaxInstanceId !facts + 1 
-        
+        member __.GetFreshInstanceId() = getMaxInstanceId !facts + 1
+
         member __.Add(fact:Fact) =
             if Set.contains fact !userFacts
-            then failwith "Fact already added"            
+            then failwith "Fact already added"
             let newUserFacts = Set.add fact !userFacts
             let newFacts = leFix newUserFacts
             let oldFacts = getFacts()
@@ -175,19 +175,19 @@ module Interpreter =
 
         member __.Remove(fact:Fact) =
             if not <| Set.contains fact !userFacts
-            then failwith "Could not remove fact not added"            
+            then failwith "Could not remove fact not added"
             let oldFacts = !facts
             let newUserFacts = Set.remove fact !userFacts
             let newFacts = leFix newUserFacts
             facts := newFacts
             userFacts := newUserFacts
             Set.difference oldFacts newFacts
-        
+
         member __.Modify(oldFact:Fact, newFact:Fact) =
             if not <| Set.contains oldFact !userFacts
             then failwith "Modify: Could not remove fact not added"
             if Set.contains newFact !userFacts
-            then failwith "Modify: Fact already added"            
+            then failwith "Modify: Fact already added"
             let oldFacts = !facts
             let newUserFacts = Set.remove oldFact !userFacts
             let newFacts = leFix newUserFacts
