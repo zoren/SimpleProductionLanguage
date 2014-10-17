@@ -4,29 +4,13 @@ module ReteInterpreter =
   open PatternMatching.PatternTree
   open PatternMatching.ReteNetwork
 
-  let evalTest (token:Token) (test:Test) : bool =
-    let rec evalExp =
-      function
-      | Const v -> v
-      | Variable(tokenIndex, fieldIndex) ->
-        let (WMETokenElement (_, values)) = List.nth token tokenIndex
-        Array.get values fieldIndex
-      | BinOp(el, binop, er) ->
-        let vl = evalExp el
-        let vr = evalExp er
-        match vl, vr with
-        | Double dl, Double dr ->
-          let evalOp =
-            function | Plus -> (+) | Minus -> (-) | Times -> (*) | Division -> (/)
-          Double <| evalOp binop dl dr
-        | Int il, Int ir ->
-          let evalOp =
-            function | Plus -> (+) | Minus -> (-) | Times -> (*) | Division -> (/)
-          Int <| evalOp binop il ir
-    match test with
-    | Comparison (e1, comp, e2) ->
-      compFunc comp (evalExp e1) (evalExp e2)
-  let evalTests token = Seq.forall (evalTest token)
+  let lookupToken token (var:Variable) =
+    let (WMETokenElement (_, values)) = List.nth token var.tokenIndex
+    Array.get values var.fieldIndex
+
+  let evalTests token tests =
+    let lookup = lookupToken token
+    Seq.forall (fun test -> test lookup) tests
 
   type ActivationFlag = Activate | Deactivate
 

@@ -3,23 +3,15 @@
 module PatternTreeInterpreter =
   open PatternMatching.PatternTree
 
-  let evalTest (env:Environment) test =
-      let evalExp =
-          function
-              | Const v -> v
-              | Variable(tokenIndex, fieldIndex) ->
-                let _,args = List.nth env tokenIndex
-                Array.get args fieldIndex
-      match test with
-          | Comparison (e1, comp, e2) ->
-            compFunc comp (evalExp e1) (evalExp e2)
-
   let matchTree ptree facts =
       let rec loop env =
         function
         | Production p -> Seq.singleton (p, env)
         | TestNode(test, ptree) ->
-          if evalTest env test
+          let lookup (var:Variable) =
+            let _,args = List.nth env var.tokenIndex
+            Array.get args var.fieldIndex
+          if test lookup
           then loop env ptree
           else Seq.empty
         | PatternNode(pat, children) ->

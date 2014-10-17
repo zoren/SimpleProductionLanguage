@@ -7,6 +7,11 @@ module PatternTree =
         | String of string
         | Double of double
 
+    let getInt =
+      function
+        | (Int i) -> i
+        | v -> failwithf "Runtime type error: value not of the expected type %A" v
+
     type FactKind = string
 
     type Fact = FactKind * Value array
@@ -18,18 +23,11 @@ module PatternTree =
         | PatternValue of Value
 
     type Pattern = FactKind * ValuePattern array
-    
-    type BinOperator = Plus | Minus | Times | Division
 
-    type Exp =
-        | Const of Value
-        | Variable of tokenIndex : int * fieldIndex : int
-        | BinOp of Exp * BinOperator * Exp
+    type Variable = { tokenIndex : int; fieldIndex : int}
+    type TestEnvironment = (Variable -> Value)
 
-    type ComparisonOperator = Eq | Lt
-
-    type Test =
-        Comparison of Exp * ComparisonOperator * Exp
+    type Test = TestEnvironment -> bool
 
     type PatternTree<'Production> =
         | PatternNode of Pattern * PatternTree<'Production> array
@@ -52,11 +50,6 @@ module PatternTree =
           | Int _, IntType | String _, StringType | Double _, DoubleType -> true
           | _ -> failwith "type error, value incompatible with anything type"
         | PatternValue v'  -> valueComp (=) v v'
-    
+
     let matchFactPattern ((patFactKind, patArgs):Pattern)  ((factKind, args):Fact) =
         factKind = patFactKind && Array.forall2 matchValuePat args patArgs
-
-    let compFunc =
-      function
-      | Eq -> valueComp (=)
-      | Lt -> valueComp (<)
