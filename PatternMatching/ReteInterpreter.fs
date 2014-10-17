@@ -2,7 +2,6 @@
 
 module ReteInterpreter =
   open PatternMatching.PatternTree
-  open PatternMatching.PatternTreeInterpreter
   open PatternMatching.ReteNetwork
 
   let evalTest (token:Token) (test:Test) : bool =
@@ -15,14 +14,15 @@ module ReteInterpreter =
       | BinOp(el, binop, er) ->
         let vl = evalExp el
         let vr = evalExp er
-        let evalOp =
-            function | Plus -> (+) | Minus -> (-) | Times -> (*) | Division -> (/)
         match vl, vr with
+        | Double dl, Double dr ->
+          let evalOp =
+            function | Plus -> (+) | Minus -> (-) | Times -> (*) | Division -> (/)
+          Double <| evalOp binop dl dr
         | Int il, Int ir ->
+          let evalOp =
+            function | Plus -> (+) | Minus -> (-) | Times -> (*) | Division -> (/)
           Int <| evalOp binop il ir
-//        | Double il, Double ir ->
-//
-//          Double <| evalOp binop il ir
     match test with
     | Comparison (e1, comp, e2) ->
       compFunc comp (evalExp e1) (evalExp e2)
@@ -30,7 +30,7 @@ module ReteInterpreter =
 
   type ActivationFlag = Activate | Deactivate
 
-  let processAlphaMem (flag:ActivationFlag) (alphaMem:AlphaMemory<_>) (w:WME) =
+  let processAlphaMem (flag:ActivationFlag) (alphaMem:AlphaMemory<'Production>) (w:WME) : ('Production * Token) list=
     match flag with
     | Activate ->
       if List.exists ((=)w) !alphaMem.wmes

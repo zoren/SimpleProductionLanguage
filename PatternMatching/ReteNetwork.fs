@@ -8,10 +8,10 @@ module ReteNetwork =
     | WMETokenElement of WME
 //    | ListTokenElement of WME
   type Token = TokenElement list
-  
+
   type BetaMemory = { tokens : Token list ref }
 
-  type NodeType<'Production> = 
+  type NodeType<'Production> =
     | Beta of BetaMemory
     | Join of JoinData<'Production>
     | Production of 'Production
