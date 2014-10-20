@@ -9,7 +9,7 @@ module PatternTreeInterpreter =
         | Production p -> Seq.singleton (p, env)
         | TestNode(test, ptree) ->
           let lookup (var:Variable) =
-            let _,args = List.nth env var.tokenIndex
+            let args = List.nth env var.tokenIndex
             Array.get args var.fieldIndex
           if test lookup
           then loop env ptree

@@ -32,7 +32,11 @@ module ReteNetwork =
     parent : ReteNode<'Production> option ref
   }
 
-  type AlphaNetwork<'Production> =
-    seq<Pattern * AlphaMemory<'Production>>
+  type PatternDiscriminatorTree<'value> =
+    PTreeAny of 'value option * PatternDiscriminatorTree<'value> option * Map<Value, PatternDiscriminatorTree<'value>>
+
+  type AlphaNetwork<'Production> = PatternDiscriminatorTree<AlphaMemory<'Production>>
 
   type ReteGraph<'Production> = ReteNode<'Production> * AlphaNetwork<'Production>
+
+  let empty = PTreeAny(None, None, Map.empty)

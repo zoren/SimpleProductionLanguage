@@ -10,16 +10,11 @@ module SPLToRete =
       | Expression.Constant i -> fun _ -> Int i
       | Deref lval ->
         let index = List.findIndex ((=)lval) env
-        fun testEnv -> testEnv {tokenIndex = index; fieldIndex = 2}
+        fun testEnv -> testEnv {tokenIndex = index; fieldIndex = 3}
       | Expression.BinOp(el, binop, er) ->
         let cel = loop el
         let cer = loop er
-        let opFunc =
-          match binop with
-          | Plus -> (+)
-          | Minus -> (-)
-          | Times -> (*)
-          | Division -> (/)
+        let opFunc = evalOp binop
         fun testEnv ->
           let vl = getInt <| cel testEnv
           let vr = getInt <| cer testEnv
@@ -32,7 +27,7 @@ module SPLToRete =
     let rec loopAbstr env =
       function
       | (varName, instType) :: abstrs ->
-        let pattern = "class", [|Anything IntType; PatternValue <| String instType|]
+        let pattern = [|PatternValue <| String "class"; Anything IntType; PatternValue <| String instType|]
         PatternNode(pattern, [|loopAbstr (LValue.Variable varName :: env) abstrs|])
       | [] ->
         let loopLVal env' lval =
@@ -61,13 +56,13 @@ module SPLToRete =
           | Proj(LValue.Variable _ as lval, cstic) as curLVal :: lvals ->
             let newEnv = curLVal::runningEnv
             let index = List.findIndex ((=)lval) newEnv
-            let pattern = "assign", [| Anything IntType; PatternValue <| String cstic; Anything IntType|]
+            let pattern = [|PatternValue <| String "assign"; Anything IntType; PatternValue <| String cstic; Anything IntType|]
             let targetWMEOffset =
               match lval with
-              | Proj _ -> 2
-              | LValue.Variable _ -> 0
+              | Proj _ -> 3
+              | LValue.Variable _ -> 1
             let objEqTest (testEnv:TestEnvironment) =
-              let thisVal = getInt <| testEnv {tokenIndex = 0; fieldIndex = 0}
+              let thisVal = getInt <| testEnv {tokenIndex = 0; fieldIndex = 1}
               let tokenVal = getInt <| testEnv {tokenIndex = index; fieldIndex = targetWMEOffset}
               thisVal = tokenVal
             let pnode = build newEnv lvals

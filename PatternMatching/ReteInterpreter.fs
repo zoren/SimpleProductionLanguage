@@ -5,7 +5,7 @@ module ReteInterpreter =
   open PatternMatching.ReteNetwork
 
   let lookupToken token (var:Variable) =
-    let (WMETokenElement (_, values)) = List.nth token var.tokenIndex
+    let (WMETokenElement values) = List.nth token var.tokenIndex
     Array.get values var.fieldIndex
 
   let evalTest token test =
@@ -63,8 +63,22 @@ module ReteInterpreter =
       joinNodeRight child w
     !delta
 
-  let naiveFindAlphaMems (patMap:seq<Pattern * AlphaMemory<_>>) (fact:Fact) =
-    Seq.choose (fun(pattern, alphaMem) -> if matchFactPattern pattern fact then Some alphaMem else None) patMap
+  let tryFindValues (values : Value array) tree =
+    let rec loop i node =
+      match node with
+      | PTreeAny(valueOpt, anythingOpt, childrenMap) ->
+        if i = values.Length
+        then Option.toArray valueOpt :> seq<_>
+        else
+          if i > values.Length
+          then
+            Seq.empty
+          else
+            let keyVal = Array.get values i
+            let child = Map.tryFind keyVal childrenMap
+            let children = Array.append (Option.toArray anythingOpt) (Option.toArray child)
+            Seq.collect (loop (i + 1)) children
+    loop 0 tree
 
   let tokenElementToWME =
     function
@@ -72,7 +86,7 @@ module ReteInterpreter =
 
 // interpretation
   let processFact flag ((_, alphaNet):ReteGraph<_>) (fact:Fact) =
-    let alphaMems = naiveFindAlphaMems alphaNet fact
+    let alphaMems = tryFindValues fact alphaNet
     let setRef = ref Set.empty
     for alphaMem in alphaMems do
       let cs = Seq.map (fun(prod,values) -> prod, List.map tokenElementToWME values)<| processAlphaMem flag alphaMem fact

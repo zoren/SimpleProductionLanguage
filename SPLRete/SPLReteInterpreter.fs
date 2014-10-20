@@ -17,18 +17,18 @@ module SPLInterpreter =
 
     member __.create className =
       let instId = interp.GetMaxInstId() + 1
-      let fact = "class", [| Int instId; String className |]
+      let fact = mkInstanceFact instId className
       ignore <| interp.Add fact
       instId
 
     member __.remove instId className =
-      let fact = "class", [| Int instId; String className |]
+      let fact = mkInstanceFact instId className
       ignore <| interp.Remove fact
 
     member __.assign instId cstic value =
-      let fact = "assign", [| Int instId; String cstic; Int value |]
+      let fact = mkAssignFact instId cstic value
       ignore <| interp.Add fact
 
     member __.unassign instId cstic value =
-      let fact = "assign", [| Int instId; String cstic; Int value |]
+      let fact = mkAssignFact instId cstic value
       ignore <| interp.Remove fact

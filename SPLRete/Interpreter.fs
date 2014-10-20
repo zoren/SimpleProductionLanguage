@@ -6,20 +6,17 @@ module Interpreter =
   open PatternMatching.PatternTree
   open SimpleProductionLanguage.AST
 
-  let evalOp =
-      function | Plus -> (+) | Minus -> (-) | Times -> (*) | Division -> (/)
-
   let evalExp (lvals : LValue list, binding: WME list) e =
     let rec loop =
       function
       | Constant i -> Int i
       | Deref lval ->
         let index = List.findIndex ((=)lval) lvals
-        let _, values = List.nth binding index
+        let values = List.nth binding index
         let targetWMEOffset =
           match lval with
-          | Proj _ -> 2
-          | LValue.Variable _ -> 0
+          | Proj _ -> 3
+          | LValue.Variable _ -> 1
         Array.get values targetWMEOffset
       | BinOp(e1,op,e2) ->
           let i1 = getInt <| loop e1
@@ -27,30 +24,33 @@ module Interpreter =
           Int <| evalOp op i1 i2
     loop e
 
+  let mkInstanceFact instId instType : Fact = [| String "class"; Int instId; String instType|]
+  let mkAssignFact instId var value : Fact = [| String "assign"; Int instId; String var; Int value|]
+
   type Interpreter(reteGraph : ReteGraph<LValue list * Action>) =
-    let facts = ref Set.empty
+    let facts : Set<Fact> ref = ref Set.empty
 
     let getFacts () = !facts
 
     let getInstances() =
       Seq.choose
           (function
-          | "class",[|Int instId; String _|] -> Some instId
+          | [|String "class"; Int instId; String _|] -> Some instId
           | _ -> None) <| getFacts()
 
     let findInstancesByType iType =
       Seq.choose
           (function
-          | "class",[|Int instId; String iType'|] when iType = iType' -> Some instId
+          | [|String "class"; Int instId; String iType'|] when iType = iType' -> Some instId
           | _ -> None) <| getFacts()
 
     let findAssignments instId =
-      Seq.choose (function ("assign",[|Int instId'; String var; value|]) when instId' = instId -> Some(var, value) | _ -> None ) <| getFacts()
+      Seq.choose (function ([|String "assign"; Int instId'; String var; value|]) when instId' = instId -> Some(var, value) | _ -> None ) <| getFacts()
 
     let findInstances iType assignments =
       let facts = getFacts()
       let instFilter instId =
-          Seq.forall (fun (var, value) -> Set.contains ("assign",[|Int instId; String var; value|]) facts) assignments
+          Seq.forall (fun (var, value) -> Set.contains [|String "assign"; Int instId; String var; Int value|] facts) assignments
       Seq.filter instFilter <| findInstancesByType iType
 
     let getMaxInstanceId() = Seq.max << Seq.append (Seq.singleton 0) <| getInstances()
@@ -58,12 +58,12 @@ module Interpreter =
     let evalStr (var, value) = sprintf "%s = %A"  var value
 
     let findInstancesByTypeAndAssignments env instType assignments =
-      let evaluatedAssignments = List.map (fun(var, exp) -> var, evalExp env exp) assignments
+      let evaluatedAssignments = List.map (fun(var, exp) -> var, getInt <| evalExp env exp) assignments
       findInstances instType evaluatedAssignments, evaluatedAssignments
 
     let getInstanceFacts instId instType evaluatedAssignments =
-      let fact : Fact = "class", [|Int instId; String instType|]
-      Seq.ofList <| fact :: (List.map (fun(var, value) -> "assign", [|Int instId;String var; value|]) evaluatedAssignments)
+      let fact = mkInstanceFact instId instType
+      Seq.ofList <| fact :: (List.map (fun(var, value) -> mkAssignFact instId var value) evaluatedAssignments)
 
     let activateAction env : Action -> seq<Fact> =
       function

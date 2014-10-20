@@ -58,3 +58,5 @@ module AST =
         | Proj(lval', fieldName) ->
             let var, fields = lvalInsideOut lval'
             var, Seq.append fields (Seq.singleton fieldName)
+
+    let evalOp = function | Plus -> (+) | Minus -> (-) | Times -> (*) | Division -> (/)

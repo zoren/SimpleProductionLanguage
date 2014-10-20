@@ -12,9 +12,7 @@ module PatternTree =
         | (Int i) -> i
         | v -> failwithf "Runtime type error: value not of the expected type %A" v
 
-    type FactKind = string
-
-    type Fact = FactKind * Value array
+    type Fact = Value array
 
     // patterns
     type ValueType = IntType | StringType | DoubleType
@@ -22,7 +20,7 @@ module PatternTree =
         | Anything of ValueType
         | PatternValue of Value
 
-    type Pattern = FactKind * ValuePattern array
+    type Pattern = ValuePattern array
 
     type Variable = { tokenIndex : int; fieldIndex : int}
     type TestEnvironment = (Variable -> Value)
@@ -51,5 +49,4 @@ module PatternTree =
           | _ -> failwith "type error, value incompatible with anything type"
         | PatternValue v'  -> valueComp (=) v v'
 
-    let matchFactPattern ((patFactKind, patArgs):Pattern)  ((factKind, args):Fact) =
-        factKind = patFactKind && Array.forall2 matchValuePat args patArgs
+    let matchFactPattern (patArgs:Pattern) (args:Fact) = Array.forall2 matchValuePat args patArgs
