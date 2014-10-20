@@ -75,7 +75,7 @@ find_or_create Element(n := e.n + 1)
   [<Test>]
   let testListPerformance()=
     let interp = createSPLInterp listRules
-    let numberOfElements = 6400
+    let numberOfElements = 100
     let setup = interp.create "Setup"
     let sw = System.Diagnostics.Stopwatch.StartNew()
     interp.assign setup "n" (numberOfElements - 1)
