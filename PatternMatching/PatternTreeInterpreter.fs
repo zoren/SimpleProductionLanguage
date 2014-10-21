@@ -23,7 +23,7 @@ module PatternTreeInterpreter =
 
   let mkEmptyState ptree : PatternTreeState<_> = ptree, ref Set.empty
 
-  let activate ((ptree, factSet):PatternTreeState<_>) (fact:Fact) =
+  let activate ((ptree, factSet):PatternTreeState<'Action>) (fact:Fact) : Set<'Action * Environment> =
     if Set.contains fact !factSet
     then failwith "Could not activate: fact already active."
     let currentConflictSet = matchTree ptree !factSet
@@ -31,12 +31,10 @@ module PatternTreeInterpreter =
     let newConflictSet = matchTree ptree !factSet
     Set.difference newConflictSet currentConflictSet
 
-  let deactivate ((ptree, factSet):PatternTreeState<_>) (fact:Fact) =
+  let deactivate ((ptree, factSet):PatternTreeState<'Action>) (fact:Fact) : Set<'Action * Environment> =
     if not <| Set.contains fact !factSet
     then failwith "Could not deactivate: fact not active."
     let currentConflictSet = matchTree ptree !factSet
     factSet := Set.remove fact !factSet
     let newConflictSet = matchTree ptree !factSet
     Set.difference currentConflictSet newConflictSet
-
-
