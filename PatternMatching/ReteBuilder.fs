@@ -58,7 +58,7 @@ module ReteBuilder =
   let mkRete nodeType children = {nodeType = nodeType; children = children; parent = ref None}
   let mkBetaMem children = mkRete (Beta {tokens = ref Set.empty}) children
   let mkBetaMemDummy children = mkRete (Beta {tokens = ref <| Set.singleton []}) children
-  let mkJoin test children = mkRete (Join {test = test;alphaMem = ref None}) children
+  let mkJoin test children = mkRete (Join <| RegularJoin{test = test;alphaMem = ref None}) children
 
   let mkAlphaMem children = {wmes = ref Set.empty;successors = children}
 
@@ -78,8 +78,10 @@ module ReteBuilder =
     let setAlphaMem alphaMem =
         for succ in alphaMem.successors do
             match succ.nodeType with
-                Join jd -> jd.alphaMem := Some alphaMem
-                | _ -> ()
+            | Join jdn ->
+              match jdn with
+              | RegularJoin jd -> jd.alphaMem := Some alphaMem
+            | _ -> ()
     setParents reteTopNode
     Seq.iter setAlphaMem <| alphaMemsInAlphaNetwork alphaNet
 

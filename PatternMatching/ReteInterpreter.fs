@@ -25,18 +25,25 @@ module ReteInterpreter =
       then failwith "not added"
       alphaMem.wmes := Set.remove w !alphaMem.wmes
     let delta = ref []
-    let rec joinNodeRight ({nodeType = Join jd} as node) (w : WME) : unit =
+    let rec joinNodeRight ({nodeType = Join jdn} as node) (w : WME) : unit =
       let (Some({nodeType = Beta bm})) = !node.parent
-      for t in !bm.tokens do
-          if evalTest ((WMETokenElement w)::t) jd.test then
+      let tokenElement = WMETokenElement w
+      match jdn with
+      | RegularJoin jd ->
+        for t in !bm.tokens do
+            if evalTest (tokenElement::t) jd.test then
+              for child in node.children do
+                leftActivation child t (Some tokenElement)
+    and joinNodeLeft  ({nodeType = Join jdn} as node) (token : Token) : unit =
+      match jdn with
+      | RegularJoin jd ->
+        let alphaMem = Option.get !jd.alphaMem
+        for w in !alphaMem.wmes do
+          let tokenElement = WMETokenElement w
+          if evalTest (tokenElement :: token) jd.test then
             for child in node.children do
-              leftActivation child t (Some <| WMETokenElement w)
-    and joinNodeLeft  ({nodeType = Join jd} as node) (token : Token) : unit =
-      let alphaMem = Option.get !jd.alphaMem
-      for w in !alphaMem.wmes do
-          if evalTest ((WMETokenElement w) :: token) jd.test then
-            for child in node.children do
-              leftActivation child token (Some <| WMETokenElement w)
+              leftActivation child token (Some tokenElement)
+
     and betaMemoryLeft  ({nodeType = Beta betaMem} as node) (t:Token) (tokElement : TokenElement) : unit =
       let newToken = tokElement :: t
       match flag with

@@ -13,8 +13,11 @@ module ReteNetwork =
 
   type NodeType<'Production> =
     | Beta of BetaMemory
-    | Join of JoinData<'Production>
+    | Join of JoinNodeType<'Production>
     | Production of 'Production
+
+  and JoinNodeType<'Production> =
+    | RegularJoin of JoinData<'Production>
 
   and JoinData<'Production> = {
     alphaMem : AlphaMemory<'Production> option ref
