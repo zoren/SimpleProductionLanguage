@@ -4,12 +4,18 @@ module ReteInterpreter =
   open PatternMatching.PatternTree
   open PatternMatching.ReteNetwork
 
-  let lookupToken token (var:Variable) =
-    let (FactTokenElement values) = List.nth token var.tokenIndex
-    Array.get values var.fieldIndex
+  let lookupToken (wme, token) (var:Variable) =
+    let fact =
+      if var.tokenIndex = 0
+      then
+        wme
+      else
+        let (FactTokenElement tokenFact) = List.nth token (var.tokenIndex - 1)
+        tokenFact
+    Array.get fact var.fieldIndex
 
-  let evalTest set token (test:Test) =
-    let lookup = lookupToken token
+  let evalTest set wmeToken (test:Test) =
+    let lookup = lookupToken wmeToken
     test set lookup
 
   type ActivationFlag = Activate | Deactivate
@@ -27,11 +33,11 @@ module ReteInterpreter =
     let delta = ref []
     let rec joinNodeRight ({nodeType = Join jdn} as node) (w : WME) : unit =
       let (Some({nodeType = Beta bm})) = !node.parent
-      let tokenElement = FactTokenElement w
       match jdn with
       | RegularJoin jd ->
         for t in !bm.tokens do
-            if evalTest !alphaMem.wmes (tokenElement::t) jd.test then
+            if evalTest !alphaMem.wmes (w, t) jd.test then
+              let tokenElement = FactTokenElement w
               for child in node.children do
                 leftActivation child t (Some tokenElement)
     and joinNodeLeft  ({nodeType = Join jdn} as node) (token : Token) : unit =
@@ -39,8 +45,8 @@ module ReteInterpreter =
       | RegularJoin jd ->
         let alphaMem = Option.get !jd.alphaMem
         for w in !alphaMem.wmes do
-          let tokenElement = FactTokenElement w
-          if evalTest !alphaMem.wmes (tokenElement :: token) jd.test then
+          if evalTest !alphaMem.wmes (w, token) jd.test then
+            let tokenElement = FactTokenElement w
             for child in node.children do
               leftActivation child token (Some tokenElement)
 
