@@ -14,13 +14,11 @@ module ReteInterpreter =
         tokenFact
     Array.get fact var.fieldIndex
 
-  let evalTest set wmeToken (test:Test) =
-    let lookup = lookupToken wmeToken
-    test set lookup
+  let evalTest set (wme, token) (test:Test) = test set (FactTokenElement wme :: token)
 
   type ActivationFlag = Activate | Deactivate
 
-  let processAlphaMem (flag:ActivationFlag) (alphaMem:AlphaMemory<'Production>) (w:WME) : ('Production * Token) list=
+  let processAlphaMem (flag:ActivationFlag) (alphaMem:AlphaMemory<'Production>) (w:WME) : ('Production * Token) list =
     match flag with
     | Activate ->
       if Set.contains w !alphaMem.wmes
@@ -36,19 +34,21 @@ module ReteInterpreter =
       match jdn with
       | RegularJoin jd ->
         for t in !bm.tokens do
-            if evalTest !alphaMem.wmes (w, t) jd.test then
-              let tokenElement = FactTokenElement w
+            match evalTest !alphaMem.wmes (w, t) jd.test with
+            | Some tokenElement ->
               for child in node.children do
                 leftActivation child t (Some tokenElement)
+            | None -> ()
     and joinNodeLeft  ({nodeType = Join jdn} as node) (token : Token) : unit =
       match jdn with
       | RegularJoin jd ->
         let alphaMem = Option.get !jd.alphaMem
         for w in !alphaMem.wmes do
-          if evalTest !alphaMem.wmes (w, token) jd.test then
-            let tokenElement = FactTokenElement w
+          match evalTest !alphaMem.wmes (w, token) jd.test with
+          | Some tokenElement ->
             for child in node.children do
               leftActivation child token (Some tokenElement)
+          | None -> ()
 
     and betaMemoryLeft  ({nodeType = Beta betaMem} as node) (t:Token) (tokElement : TokenElement) : unit =
       let newToken = tokElement :: t
