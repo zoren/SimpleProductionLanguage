@@ -8,9 +8,9 @@ module ReteInterpreter =
     let (FactTokenElement values) = List.nth token var.tokenIndex
     Array.get values var.fieldIndex
 
-  let evalTest token test =
+  let evalTest set token (test:Test) =
     let lookup = lookupToken token
-    test lookup
+    test set lookup
 
   type ActivationFlag = Activate | Deactivate
 
@@ -31,7 +31,7 @@ module ReteInterpreter =
       match jdn with
       | RegularJoin jd ->
         for t in !bm.tokens do
-            if evalTest (tokenElement::t) jd.test then
+            if evalTest !alphaMem.wmes (tokenElement::t) jd.test then
               for child in node.children do
                 leftActivation child t (Some tokenElement)
     and joinNodeLeft  ({nodeType = Join jdn} as node) (token : Token) : unit =
@@ -40,7 +40,7 @@ module ReteInterpreter =
         let alphaMem = Option.get !jd.alphaMem
         for w in !alphaMem.wmes do
           let tokenElement = FactTokenElement w
-          if evalTest (tokenElement :: token) jd.test then
+          if evalTest !alphaMem.wmes (tokenElement :: token) jd.test then
             for child in node.children do
               leftActivation child token (Some tokenElement)
 

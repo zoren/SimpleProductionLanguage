@@ -40,9 +40,8 @@ module ReteBuilder =
     let rec loop depth =
       function
       | PatternTree.Production prodId -> mkRete (Production prodId) [||]
-      | PatternNode(pattern, tests, children) ->
+      | PatternNode(pattern, test, children) ->
         let betaMem = mkBetaMem <| Array.map (loop (depth + 1)) children
-        let test testEnv = Seq.forall (fun test -> test testEnv) tests
         let joinNode = mkJoin test [| betaMem |]
         alphaMapRef := addOneToMany pattern (depth, joinNode)  !alphaMapRef
         joinNode

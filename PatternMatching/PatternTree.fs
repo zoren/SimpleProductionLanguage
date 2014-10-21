@@ -23,10 +23,10 @@ module PatternTree =
     type Variable = { tokenIndex : int; fieldIndex : int}
     type TestEnvironment = (Variable -> Value)
 
-    type Test = TestEnvironment -> bool
+    type Test = Set<Fact> -> TestEnvironment -> bool
 
     type PatternTree<'Production> =
-        | PatternNode of Pattern * Test list * PatternTree<'Production> array
+        | PatternNode of Pattern * Test * PatternTree<'Production> array
         | Production of 'Production
 
     type Environment = TokenElement list
