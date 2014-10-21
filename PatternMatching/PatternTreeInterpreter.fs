@@ -3,6 +3,21 @@
 module PatternTreeInterpreter =
   open PatternMatching.PatternTree
 
+  let valueComp pred v v' =
+    match v,v' with
+    | Int _, Int _ | String _, String _ | Double _, Double _ -> pred v v'
+    | _ -> failwith "type error, incompatible values compared"
+
+  let matchValuePat (v:Value) (vp:ValuePattern) =
+      match vp with
+      | Anything valueType ->
+        match v, valueType with
+        | Int _, IntType | String _, StringType | Double _, DoubleType -> true
+        | _ -> failwith "type error, value incompatible with anything type"
+      | PatternValue v'  -> valueComp (=) v v'
+
+  let matchFactPattern (patArgs:Pattern) (args:Fact) = Array.forall2 matchValuePat args patArgs
+
   let lookupEnv (env:Environment) (var:Variable) =
     match List.nth env var.tokenIndex with
     | FactTokenElement args -> Array.get args var.fieldIndex
