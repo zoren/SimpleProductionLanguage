@@ -35,7 +35,7 @@ module SPLToRete =
       function
       | (varName, instType) :: abstrs ->
         let pattern = mkClassPattern instType
-        PatternNode(pattern, (fun _ _ -> true), [|loopAbstr (LValue.Variable varName :: env) abstrs|])
+        PatternNode(pattern, (fun _ env -> Some <| List.head env), [|loopAbstr (LValue.Variable varName :: env) abstrs|])
       | [] ->
         let loopLVal env' lval =
           let var, fields = lvalInsideOut lval
@@ -51,9 +51,9 @@ module SPLToRete =
           | LessThan(el, er) ->
             let cel = compExp env' el
             let cer = compExp env' er
-            let lessThan _ (testEnv:TestEnvironment) =
-              let vl = getInt <| cel testEnv
-              let vr = getInt <| cer testEnv
+            let lessThan _ (env:Environment) =
+              let vl = getInt << cel <| lookupEnv env
+              let vr = getInt << cer <| lookupEnv env
               vl < vr
             [lessThan]
         let rec build runningEnv =
@@ -63,16 +63,19 @@ module SPLToRete =
             let newEnv = curLVal::runningEnv
             let index = List.findIndex ((=)lval) newEnv
             let pattern = mkAssignPattern cstic
-            let objEqTest _ (testEnv:TestEnvironment) =
-              let thisVal = getInt <| testEnv {tokenIndex = 0; fieldIndex = 1}
-              let tokenVal = getInt <| testEnv {tokenIndex = index; fieldIndex = targetWMEOffset lval}
+            let objEqTest _ (env:Environment) =
+              let thisVal = getInt <| lookupEnv env {tokenIndex = 0; fieldIndex = 1}
+              let tokenVal = getInt <| lookupEnv env {tokenIndex = index; fieldIndex = targetWMEOffset lval}
               thisVal = tokenVal
             let pnode = build newEnv lvals
             let nodeTests =
               match lvals with
               | [] -> objEqTest :: tests
               | _ -> [objEqTest]
-            let test facts testEnv = Seq.forall (fun test -> test facts testEnv) nodeTests
+            let test facts env =
+              if Seq.forall (fun test -> test facts env) nodeTests
+              then Some <| List.head env
+              else None
             PatternNode(pattern, test, [| pnode |])
         build env (List.rev lvalsInCond)
     loopAbstr [] abstrList

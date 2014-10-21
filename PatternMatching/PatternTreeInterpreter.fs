@@ -18,20 +18,16 @@ module PatternTreeInterpreter =
 
   let matchFactPattern (patArgs:Pattern) (args:Fact) = Array.forall2 matchValuePat args patArgs
 
-  let lookupEnv (env:Environment) (var:Variable) =
-    match List.nth env var.tokenIndex with
-    | FactTokenElement args -> Array.get args var.fieldIndex
-
   let matchTree ptree facts : Set<'Action * Environment> =
       let rec loop (env:Environment) =
         function
         | Production p -> Seq.singleton (p, env)
         | PatternNode(pat, test, children) ->
           let matchingFacts = Set.ofSeq <| Seq.filter (matchFactPattern pat) facts
-          if test matchingFacts (lookupEnv env)
-          then
-            Seq.collect (fun fact -> Seq.collect (loop ((FactTokenElement fact)::env)) children) matchingFacts
-          else
+          match test matchingFacts env with
+          | Some tokenElement ->
+            Seq.collect (fun fact -> Seq.collect (loop (tokenElement::env)) children) matchingFacts
+          | None ->
             Seq.empty
       Set.ofSeq <| loop [] ptree
 

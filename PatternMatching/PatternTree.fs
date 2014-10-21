@@ -22,14 +22,13 @@ module PatternTree =
 
     type Variable = { tokenIndex : int; fieldIndex : int}
     type TestEnvironment = (Variable -> Value)
+    type Environment = TokenElement list
 
-    type Test = Set<Fact> -> TestEnvironment -> bool
+    type Test = Set<Fact> -> Environment -> TokenElement option
 
     type PatternTree<'Production> =
         | PatternNode of Pattern * Test * PatternTree<'Production> array
         | Production of 'Production
-
-    type Environment = TokenElement list
 
     type ConflictSet<'Production> when 'Production : comparison = ConflictSet of Set<'Production * Environment>
 
@@ -37,3 +36,7 @@ module PatternTree =
       function
         | (Int i) -> i
         | v -> failwithf "Runtime type error: value not of the expected type %A" v
+
+    let lookupEnv (env:Environment) (var:Variable) =
+      match List.nth env var.tokenIndex with
+      | FactTokenElement args -> Array.get args var.fieldIndex
