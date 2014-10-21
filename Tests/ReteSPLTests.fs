@@ -108,11 +108,6 @@ find_or_create Element(n := e.n + 1)
     let cs = interp.Interpreter.GetInstancesOfType("Element")
     test <@ Seq.length cs = 0 @>
 
-  let mkClassPat className = "class",[|Anything IntType; PatternValue <| String className|]
-  let mkCsticPat cstic = "assign",[|Anything IntType; PatternValue <| String cstic; Anything IntType|]
-  let mkPatternNode pat ptree = PatternNode(pat, [| ptree |])
-  let mkTestNodes tests ptree = Seq.fold (fun pt t -> TestNode(t, pt)) ptree tests
-
   [<Test>]
   let testTracingManualRayCreation()=
     let s = @"
