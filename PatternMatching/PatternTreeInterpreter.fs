@@ -26,13 +26,13 @@ module PatternTreeInterpreter =
       let rec loop (env:Environment) =
         function
         | Production p -> Seq.singleton (p, env)
-        | TestNode(test, ptree) ->
-          if test (lookupEnv env)
-          then loop env ptree
-          else Seq.empty
-        | PatternNode(pat, children) ->
-          let matchingFacts = Seq.filter (matchFactPattern pat) facts
-          Seq.collect (fun fact -> Seq.collect (loop ((FactTokenElement fact)::env)) children) matchingFacts
+        | PatternNode(pat, tests, children) ->
+          if Seq.forall (fun test -> test (lookupEnv env)) tests
+          then
+            let matchingFacts = Seq.filter (matchFactPattern pat) facts
+            Seq.collect (fun fact -> Seq.collect (loop ((FactTokenElement fact)::env)) children) matchingFacts
+          else
+            Seq.empty
       Set.ofSeq <| loop [] ptree
 
   type PatternTreeState<'Production> = PatternTree<'Production> * Set<Fact> ref

@@ -26,8 +26,7 @@ module PatternTree =
     type Test = TestEnvironment -> bool
 
     type PatternTree<'Production> =
-        | PatternNode of Pattern * PatternTree<'Production> array
-        | TestNode of Test * PatternTree<'Production>
+        | PatternNode of Pattern * Test list * PatternTree<'Production> array
         | Production of 'Production
 
     type Environment = TokenElement list

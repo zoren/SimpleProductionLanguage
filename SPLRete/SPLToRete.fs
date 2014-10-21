@@ -35,7 +35,7 @@ module SPLToRete =
       function
       | (varName, instType) :: abstrs ->
         let pattern = mkClassPattern instType
-        PatternNode(pattern, [|loopAbstr (LValue.Variable varName :: env) abstrs|])
+        PatternNode(pattern, [], [|loopAbstr (LValue.Variable varName :: env) abstrs|])
       | [] ->
         let loopLVal env' lval =
           let var, fields = lvalInsideOut lval
@@ -68,11 +68,10 @@ module SPLToRete =
               let tokenVal = getInt <| testEnv {tokenIndex = index; fieldIndex = targetWMEOffset lval}
               thisVal = tokenVal
             let pnode = build newEnv lvals
-            let testsNode =
+            let nodeTests =
               match lvals with
-              | [] ->
-                Seq.fold (fun n test -> TestNode(test, n)) pnode << List.rev <| objEqTest :: tests
-              | _ -> TestNode(objEqTest, pnode)
-            PatternNode(pattern, [| testsNode |])
+              | [] -> objEqTest :: tests
+              | _ -> [objEqTest]
+            PatternNode(pattern, nodeTests, [| pnode |])
         build env (List.rev lvalsInCond)
     loopAbstr [] abstrList
