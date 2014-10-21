@@ -6,6 +6,7 @@ module Interpreter =
   open PatternMatching.ReteInterpreter
   open PatternMatching.PatternTree
   open SimpleProductionLanguage.AST
+  open SPLRete.SPLToRete
 
   let evalExp (lvals : LValue list, binding: Environment) e =
     let rec loop =
@@ -13,11 +14,7 @@ module Interpreter =
       | Constant i -> Int i
       | Deref lval ->
         let index = List.findIndex ((=)lval) lvals
-        let targetWMEOffset =
-          match lval with
-          | Proj _ -> 3
-          | LValue.Variable _ -> 1
-        lookupEnv binding {tokenIndex = index; fieldIndex = targetWMEOffset}
+        lookupEnv binding {tokenIndex = index; fieldIndex = targetWMEOffset lval}
       | BinOp(e1,op,e2) ->
           let i1 = getInt <| loop e1
           let i2 = getInt <| loop e2

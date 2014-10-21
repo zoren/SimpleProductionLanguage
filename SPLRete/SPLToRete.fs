@@ -4,6 +4,13 @@ module SPLToRete =
   open SimpleProductionLanguage.AST
   open PatternMatching.PatternTree
 
+  let mkClassPattern instType = [|PatternValue <| String "class"; Anything IntType; PatternValue <| String instType|]
+  let mkAssignPattern cstic = [|PatternValue <| String "assign"; Anything IntType; PatternValue <| String cstic; Anything IntType|]
+  let targetWMEOffset lval =
+    match lval with
+    | Proj _ -> 3
+    | LValue.Variable _ -> 1
+
   let compExp env exp =
     let rec loop =
       function
@@ -27,7 +34,7 @@ module SPLToRete =
     let rec loopAbstr env =
       function
       | (varName, instType) :: abstrs ->
-        let pattern = [|PatternValue <| String "class"; Anything IntType; PatternValue <| String instType|]
+        let pattern = mkClassPattern instType
         PatternNode(pattern, [|loopAbstr (LValue.Variable varName :: env) abstrs|])
       | [] ->
         let loopLVal env' lval =
@@ -38,7 +45,6 @@ module SPLToRete =
         let loopLVal' e l = snd <| loopLVal e l
         let env' = Set.fold loopLVal' env lvals
         let lvalsInCond = Set.fold loopLVal' [] lvals
-
         let tests =
           match cond with
           | True -> []
@@ -56,14 +62,10 @@ module SPLToRete =
           | Proj(LValue.Variable _ as lval, cstic) as curLVal :: lvals ->
             let newEnv = curLVal::runningEnv
             let index = List.findIndex ((=)lval) newEnv
-            let pattern = [|PatternValue <| String "assign"; Anything IntType; PatternValue <| String cstic; Anything IntType|]
-            let targetWMEOffset =
-              match lval with
-              | Proj _ -> 3
-              | LValue.Variable _ -> 1
+            let pattern = mkAssignPattern cstic
             let objEqTest (testEnv:TestEnvironment) =
               let thisVal = getInt <| testEnv {tokenIndex = 0; fieldIndex = 1}
-              let tokenVal = getInt <| testEnv {tokenIndex = index; fieldIndex = targetWMEOffset}
+              let tokenVal = getInt <| testEnv {tokenIndex = index; fieldIndex = targetWMEOffset lval}
               thisVal = tokenVal
             let pnode = build newEnv lvals
             let testsNode =
