@@ -70,26 +70,8 @@ module ReteInterpreter =
       joinNodeRight child w
     !delta
 
-  let tryFindValues (values : Value array) tree =
-    let rec loop i node =
-      match node with
-      | PTreeAny(valueOpt, anythingOpt, childrenMap) ->
-        if i = values.Length
-        then Option.toArray valueOpt :> seq<_>
-        else
-          if i > values.Length
-          then
-            Seq.empty
-          else
-            let keyVal = Array.get values i
-            let child = Map.tryFind keyVal childrenMap
-            let children = Array.append (Option.toArray anythingOpt) (Option.toArray child)
-            Seq.collect (loop (i + 1)) children
-    loop 0 tree
-
-// interpretation
   let processFact flag ((_, alphaNet):ReteGraph<_>) (fact:Fact) : Set<'Action * Environment> =
-    let alphaMems = tryFindValues fact alphaNet
+    let alphaMems = PatternDiscriminatorTree.tryFindValues fact alphaNet
     let setRef = ref Set.empty
     for alphaMem in alphaMems do
       let cs = processAlphaMem flag alphaMem fact

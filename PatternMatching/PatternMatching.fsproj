@@ -44,6 +44,7 @@
   <ItemGroup>
     <Compile Include="PatternTree.fs" />
     <Compile Include="PatternTreeInterpreter.fs" />
+    <Compile Include="PatternDiscriminatorTree.fs" />
     <Compile Include="ReteNetwork.fs" />
     <Compile Include="ReteBuilder.fs" />
     <Compile Include="ReteInterpreter.fs" />
