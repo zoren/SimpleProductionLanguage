@@ -7,13 +7,11 @@ module InterpreterTests =
 
     open Swensen.Unquote
     open FParsec.CharParsers
-    let runP p s = 
+    let runP p s =
         match run p s with
         | Success(result, _, _) -> result
         | Failure(msg,_,_) -> printfn "%s" msg; raise <| System.NotImplementedException()
-    
-    
-    open SimpleProductionLanguage.AST
+
     let parseRules s = runP SimpleProductionLanguage.Parser.rules s
 
     open SimpleProductionLanguage.Interpreter
@@ -41,7 +39,6 @@ module InterpreterTests =
         let interp = new Interpreter(rules)
         interp.Add(Instance(0, "Setup"))
         interp.Add(Assignment(0, "x", Int 4))
-        let out = interp.GetFacts()
 
         test <@ 5 = (Seq.length <| interp.GetInstancesOfType "Ray") @>
 
@@ -89,7 +86,7 @@ module InterpreterTests =
 // draw circle
 \ c:Circle, r:Ray ->
 	(r.x - c.x) * (r.x - c.x) +
-	(r.y - c.y) * (r.y - c.y) < c.radius ? 
+	(r.y - c.y) * (r.y - c.y) < c.radius ?
 		find_or_create Pixel(x := r.x, y := r.y, color := c.color)"
         let rules = parseRules s
         let interp = new Interpreter(rules)
@@ -97,23 +94,23 @@ module InterpreterTests =
         interp.Add(Instance(0, "Setup"))
         interp.Add(Assignment(0, "x", Int 3))
         interp.Add(Assignment(0, "y", Int 3))
-        
+
         let colorId = interp.GetFreshInstanceId()
         interp.Add(Instance(colorId, "Color"))
-        
+
         let circleId = interp.GetFreshInstanceId()
         interp.Add(Instance(circleId, "Circle"))
         interp.Add(Assignment(circleId, "x", Int 1))
         interp.Add(Assignment(circleId, "y", Int 1))
         interp.Add(Assignment(circleId, "radius", Int 1))
         interp.Add(Assignment(circleId, "color", InstanceRef colorId))
-                
+
         let out = interp.GetFacts()
         let pixels = interp.GetInstancesOfType("Pixel")
         test <@ not <| Seq.isEmpty pixels @>
 
         let findAssignments instId =
-            Map.ofSeq <| Seq.choose 
+            Map.ofSeq <| Seq.choose
                 (function
                 | Assignment(instId', field', value') when instId = instId' -> Some (field', value')
                 | _ -> None) out
@@ -164,9 +161,7 @@ module InterpreterTests =
         interp.Add(Instance(0, "Setup"))
         interp.Add(Assignment(0, "x", Int 3))
         interp.Add(Assignment(0, "y", Int 3))
-        let out = interp.GetFacts()
-//        for fact in out do
-//            printfn "%A" fact
+
         test <@ 16 = (Seq.length <| interp.GetInstancesOfType "Ray") @>
         let added, removed = interp.Modify(Assignment(0, "y", Int 3), Assignment(0, "y", Int 2))
         test <@ Set.singleton (Assignment(0,"y", Int 2)) = added @>

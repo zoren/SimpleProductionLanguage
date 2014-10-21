@@ -47,7 +47,7 @@ module Interpreter =
     let findInstances iType assignments =
       let facts = getFacts()
       let instFilter instId =
-          Seq.forall (fun (var, value) -> Set.contains [|String "assign"; Int instId; String var; Int value|] facts) assignments
+          Seq.forall (fun (var, value) -> Set.contains (mkAssignFact instId var value) facts) assignments
       Seq.filter instFilter <| findInstancesByType iType
 
     let getMaxInstanceId() = Seq.max << Seq.append (Seq.singleton 0) <| getInstances()

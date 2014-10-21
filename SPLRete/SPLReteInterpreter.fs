@@ -3,7 +3,6 @@
 module SPLInterpreter =
   open SPLRete.Interpreter
   open SimpleProductionLanguage.AST
-  open PatternMatching.PatternTree
   open PatternMatching.ReteBuilder
   open SPLToRete
 

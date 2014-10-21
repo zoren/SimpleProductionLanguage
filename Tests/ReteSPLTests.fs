@@ -16,13 +16,9 @@ module ReteRay =
     | Failure(msg,_,_) -> printfn "%s" msg; raise <| System.NotImplementedException()
 
   open SPLRete.SPLToRete
-  open SPLRete.Interpreter
   open SPLRete.SPLInterpreter
-  open SimpleProductionLanguage.Parser
-  open PatternMatching.ReteNetwork
   open PatternMatching.ReteBuilder
   open PatternMatching.PatternTree
-  open PatternMatching.ReteInterpreter
 
   let parseRules s = runP SimpleProductionLanguage.Parser.rules s
 
