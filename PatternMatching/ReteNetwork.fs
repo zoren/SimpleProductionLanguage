@@ -4,9 +4,6 @@ module ReteNetwork =
   open PatternMatching.PatternTree
 
   type WME = Fact
-  type TokenElement =
-    | WMETokenElement of WME
-//    | ListTokenElement of WME
   type Token = TokenElement list
 
   type BetaMemory = { tokens : Set<Token> ref }
@@ -22,7 +19,7 @@ module ReteNetwork =
   and JoinData<'Production> = {
     alphaMem : AlphaMemory<'Production> option ref
     test : Test
-    }
+  }
 
   and AlphaMemory<'Production> = {
     wmes : Set<WME> ref

@@ -5,7 +5,7 @@ module ReteInterpreter =
   open PatternMatching.ReteNetwork
 
   let lookupToken token (var:Variable) =
-    let (WMETokenElement values) = List.nth token var.tokenIndex
+    let (FactTokenElement values) = List.nth token var.tokenIndex
     Array.get values var.fieldIndex
 
   let evalTest token test =
@@ -27,7 +27,7 @@ module ReteInterpreter =
     let delta = ref []
     let rec joinNodeRight ({nodeType = Join jdn} as node) (w : WME) : unit =
       let (Some({nodeType = Beta bm})) = !node.parent
-      let tokenElement = WMETokenElement w
+      let tokenElement = FactTokenElement w
       match jdn with
       | RegularJoin jd ->
         for t in !bm.tokens do
@@ -39,7 +39,7 @@ module ReteInterpreter =
       | RegularJoin jd ->
         let alphaMem = Option.get !jd.alphaMem
         for w in !alphaMem.wmes do
-          let tokenElement = WMETokenElement w
+          let tokenElement = FactTokenElement w
           if evalTest (tokenElement :: token) jd.test then
             for child in node.children do
               leftActivation child token (Some tokenElement)
@@ -54,9 +54,9 @@ module ReteInterpreter =
         let tokenElementToRemove = tokElement
         let tokenFilter tokenElement =
           match tokenElementToRemove with
-          | WMETokenElement wme ->
+          | FactTokenElement wme ->
             match tokenElement with
-            | WMETokenElement wme' -> wme = wme'
+            | FactTokenElement wme' -> wme = wme'
         betaMem.tokens := Set.filter (fun token -> not <| List.exists tokenFilter token) !betaMem.tokens
       for child in node.children do
         leftActivation child newToken None
@@ -87,21 +87,15 @@ module ReteInterpreter =
             Seq.collect (loop (i + 1)) children
     loop 0 tree
 
-  let tokenElementToWME =
-    function
-    | WMETokenElement wme -> wme
-
 // interpretation
-  let processFact flag ((_, alphaNet):ReteGraph<_>) (fact:Fact) =
+  let processFact flag ((_, alphaNet):ReteGraph<_>) (fact:Fact) : Set<'Action * Environment> =
     let alphaMems = tryFindValues fact alphaNet
     let setRef = ref Set.empty
     for alphaMem in alphaMems do
-      let cs = Seq.map (fun(prod,values) -> prod, List.map tokenElementToWME values)<| processAlphaMem flag alphaMem fact
-      let f set conflict =
-        Set.add conflict set
-      setRef := Seq.fold f !setRef cs
+      let cs = processAlphaMem flag alphaMem fact
+      setRef := Set.union !setRef <| Set.ofList cs
     !setRef
 
-  let activate (graph:ReteGraph<_>) (fact:Fact) = processFact Activate graph fact
+  let activate (graph:ReteGraph<_>) (fact:Fact) : Set<'Action * Environment> = processFact Activate graph fact
 
-  let deactivate (graph:ReteGraph<_>) (fact:Fact) = processFact Deactivate graph fact
+  let deactivate (graph:ReteGraph<_>) (fact:Fact) : Set<'Action * Environment> = processFact Deactivate graph fact

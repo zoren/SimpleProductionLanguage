@@ -7,11 +7,6 @@ module PatternTree =
         | String of string
         | Double of double
 
-    let getInt =
-      function
-        | (Int i) -> i
-        | v -> failwithf "Runtime type error: value not of the expected type %A" v
-
     type Fact = Value array
 
     // patterns
@@ -21,6 +16,9 @@ module PatternTree =
         | PatternValue of Value
 
     type Pattern = ValuePattern array
+
+    type TokenElement =
+      | FactTokenElement of Fact
 
     type Variable = { tokenIndex : int; fieldIndex : int}
     type TestEnvironment = (Variable -> Value)
@@ -32,9 +30,14 @@ module PatternTree =
         | TestNode of Test * PatternTree<'Production>
         | Production of 'Production
 
-    type Environment = Fact list
+    type Environment = TokenElement list
 
     type ConflictSet<'Production> when 'Production : comparison = ConflictSet of Set<'Production * Environment>
+
+    let getInt =
+      function
+        | (Int i) -> i
+        | v -> failwithf "Runtime type error: value not of the expected type %A" v
 
     let valueComp pred v v' =
       match v,v' with

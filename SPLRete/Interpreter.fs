@@ -2,22 +2,22 @@
 
 module Interpreter =
   open PatternMatching.ReteNetwork
+  open PatternMatching.PatternTreeInterpreter
   open PatternMatching.ReteInterpreter
   open PatternMatching.PatternTree
   open SimpleProductionLanguage.AST
 
-  let evalExp (lvals : LValue list, binding: WME list) e =
+  let evalExp (lvals : LValue list, binding: Environment) e =
     let rec loop =
       function
       | Constant i -> Int i
       | Deref lval ->
         let index = List.findIndex ((=)lval) lvals
-        let values = List.nth binding index
         let targetWMEOffset =
           match lval with
           | Proj _ -> 3
           | LValue.Variable _ -> 1
-        Array.get values targetWMEOffset
+        lookupEnv binding {tokenIndex = index; fieldIndex = targetWMEOffset}
       | BinOp(e1,op,e2) ->
           let i1 = getInt <| loop e1
           let i2 = getInt <| loop e2
@@ -92,9 +92,9 @@ module Interpreter =
       else
         let conflictSet = Set.ofSeq <| Seq.collect (activate reteGraph) inputFacts
         facts := Set.unionMany[ !facts; inputFacts]
-        let update ((lvals : LValue list, action), wmes : WME list) =
-          let env = lvals, wmes
-          let newFacts = activateAction env action
+        let update ((lvals : LValue list, action), env : Environment) =
+          let lvalEnv = lvals, env
+          let newFacts = activateAction lvalEnv action
           facts := Set.unionMany[ !facts; Set.ofSeq <| newFacts]
           newFacts
         let newFacts = Set.ofSeq <| Seq.collect update conflictSet
@@ -105,9 +105,9 @@ module Interpreter =
       then ()
       else
         let conflictSet = Set.ofSeq <| Seq.collect (deactivate reteGraph) inputFacts
-        let update ((lvals : LValue list, action), wmes : WME list) =
-          let env = lvals, wmes
-          let factsToRemove = Set.ofSeq <| deactivateAction env action
+        let update ((lvals : LValue list, action), env : Environment) =
+          let lvalEnv = lvals, env
+          let factsToRemove = Set.ofSeq <| deactivateAction lvalEnv action
           factsToRemove
         let newFactsToRemove = Set.ofSeq <| Seq.collect update conflictSet
         deactivateEvalSet newFactsToRemove
