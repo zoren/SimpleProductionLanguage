@@ -4,16 +4,6 @@ module ReteInterpreter =
   open PatternMatching.PatternTree
   open PatternMatching.ReteNetwork
 
-  let lookupToken (wme, token) (var:Variable) =
-    let fact =
-      if var.tokenIndex = 0
-      then
-        wme
-      else
-        let (FactTokenElement tokenFact) = List.nth token (var.tokenIndex - 1)
-        tokenFact
-    Array.get fact var.fieldIndex
-
   let evalTest set (wme, token) (test:Test) = test set (FactTokenElement wme :: token)
 
   type ActivationFlag = Activate | Deactivate
