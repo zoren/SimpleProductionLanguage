@@ -5,9 +5,7 @@ module AST =
     type VariableName = string
     type FieldName = string
 
-    type Abstractions =
-        | Abstr of VariableName * InstanceType
-        | Abstrs of VariableName * InstanceType * Abstractions
+    type Abstractions = (VariableName * InstanceType) list
 
     type BinOperator = Plus | Minus | Times | Division
 
@@ -30,10 +28,6 @@ module AST =
 
     type Rule = Abstractions * Condition * Action
 
-    let rec abstrToSeq =
-      function
-      | Abstr(varName, instType) -> Seq.singleton (varName, instType)
-      | Abstrs(varName, instType, abstrs) -> Seq.append (Seq.singleton (varName, instType)) <| abstrToSeq abstrs
 
     let rec lvalDomExp =
         function

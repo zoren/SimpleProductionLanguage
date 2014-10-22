@@ -74,12 +74,7 @@ module Parser =
         (str_ws "find_or_create") >>. id .>>. (parens (sepBy passignment comma)) |>> FindOrCreate
     ]
 
-  let pabstractions =
-    let rec toAbstrs =
-        function
-        | [tup] -> Abstr tup
-        | ((var, iType)::tail) -> Abstrs(var, iType, toAbstrs tail)
-    sepBy1 (id .>> colon .>>. id) comma |>> toAbstrs
+  let pabstractions = sepBy1 (id .>> colon .>>. id) comma
 
   let rule : Parser<Rule, unit> =
     tuple3

@@ -20,7 +20,7 @@ module C =
         let s = @"\ s:Setup -> true?
 	find_or_create Ray(x := 0, y := 0)"
         let [ast] = parseRules s
-        test <@ ast = (Abstr("s","Setup"), True, FindOrCreate("Ray",["x",Constant 0;"y",Constant 0])) @>
+        test <@ ast = (["s","Setup"], True, FindOrCreate("Ray",["x",Constant 0;"y",Constant 0])) @>
 
     [<Test>]
     let t2() =
@@ -29,7 +29,7 @@ module C =
 	a + b * c < d ?
 		find_or_create pixel(x := 5)"
         let [ast] = parseRules s
-        test <@ ast = (Abstrs("c", "Circle", Abstr("r", "Ray")),
+        test <@ ast = (["c", "Circle"; "r", "Ray"],
                  LessThan
                    (BinOp
                       (Deref (Variable "a"),Plus,
@@ -42,7 +42,7 @@ module C =
   part_of(p, r) ?
     find_or_create FoundInstance()"
       let [ast] = parseRules s
-      test <@ ast = (Abstrs("r", "Root", Abstr("p", "Part")),
+      test <@ ast = (["r", "Root";"p", "Part"],
                 PartOf(Deref(Variable "p"), Deref(Variable "r")),
                   FindOrCreate ("FoundInstance",[])) @>
 

@@ -39,21 +39,14 @@ module Interpreter =
     let bindAbstractions facts abstrs =
         let rec bindFactsToAbstr (abstrs:Abstractions) =
             match abstrs with
-            | Abstr(var, iType) -> Seq.map (fun instId -> Map.ofList[var, instId]) <| findInstancesByType iType facts
-            | Abstrs(var, iType, abstrs') ->
+            | [var, iType] -> Seq.map (fun instId -> Map.ofList[var, instId]) <| findInstancesByType iType facts
+            | (var, iType) :: abstrs' ->
                 let bindings = bindFactsToAbstr abstrs'
                 let instBindings = findInstancesByType iType facts
                 Seq.collect (fun instId -> Seq.map (fun binding -> Map.add var instId binding) bindings) instBindings
         bindFactsToAbstr abstrs
 
-    let rec getType var abstrs =
-        match abstrs with
-        | Abstr(var', iType') when var = var' -> iType'
-        | Abstrs(var', iType', abstrs) ->
-            if var = var'
-            then iType'
-            else getType var abstrs
-        | _ -> failwithf "Cannot find type of var: '%s'" var
+    let rec getType var abstrs = snd <| List.find (fun (var', _) -> var = var') abstrs
 
     let bindRule facts (rule : Rule) : Map<LValue, RTValue> seq =
         let abstrs, _, _ = rule
@@ -76,10 +69,6 @@ module Interpreter =
             | lval::lvals ->
                 let bindings = bindLValValue accMap lval
                 Seq.collect (fun binding -> binder binding lvals) bindings
-        let rec lvalsInAbstr abstr =
-            match abstr with
-            | Abstr(var, _) -> Set.singleton <| Variable var
-            | Abstrs(var, _, abstrs) -> Set.union (Set.singleton <| Variable var) (lvalsInAbstr abstrs)
         let lvalAndAbstr = Set.toList <| Set.union lvalDom (lvalsInAbstr abstrs)
         binder Map.empty <| lvalAndAbstr
 
