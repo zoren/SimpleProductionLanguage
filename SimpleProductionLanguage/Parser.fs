@@ -58,13 +58,19 @@ module Parser =
   expOpp.AddOperator(InfixOperator("*", ws, 2, Associativity.Left, mkBin Times))
   expOpp.AddOperator(InfixOperator("/", ws, 2, Associativity.Left, mkBin Division))
 
+  let pCompOp =
+    choice [
+      str_ws "<" >>% LT
+      str_ws "=" >>% EQ
+    ]
+
   let twoExps = parens (pexp .>> (charws ',') .>>. pexp)
 
   let pcond =
     choice [
         str_ws "true" >>% True
         str_ws "part_of" >>. twoExps |>> PartOf
-        pexp .>> (charws '<') .>>. pexp |>> LessThan
+        tuple3 pexp pCompOp pexp |>> Comparison
     ]
 
   let passignment = id .>> (str_ws ":=") .>>. pexp

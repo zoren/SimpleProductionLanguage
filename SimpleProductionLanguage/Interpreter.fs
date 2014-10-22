@@ -46,8 +46,6 @@ module Interpreter =
                 Seq.collect (fun instId -> Seq.map (fun binding -> Map.add var instId binding) bindings) instBindings
         bindFactsToAbstr abstrs
 
-    let rec getType var abstrs = snd <| List.find (fun (var', _) -> var = var') abstrs
-
     let bindRule facts (rule : Rule) : Map<LValue, RTValue> seq =
         let abstrs, _, _ = rule
         let rec bindLValValue accMap lval =
@@ -62,16 +60,15 @@ module Interpreter =
                     let assignedValues = findAssignments instId fieldName facts
                     Seq.map (fun value -> Map.add lval value binding) assignedValues
                 Seq.collect f maps
-        let lvalDom = lvalDomRule rule
         let rec binder accMap lvals =
             match lvals with
             | [] -> Seq.singleton accMap
             | lval::lvals ->
                 let bindings = bindLValValue accMap lval
                 Seq.collect (fun binding -> binder binding lvals) bindings
-        let abstrLValSet = Set.ofSeq <| List.map (Variable << fst) abstrs
-        let lvalAndAbstr = Set.toList <| Set.union lvalDom abstrLValSet
-        binder Map.empty <| lvalAndAbstr
+        let histogram = lvalDomRule rule
+        let lvalOrderList = List.ofSeq <| histogramToOrder histogram
+        binder Map.empty lvalOrderList
 
     let evalOp =
         function | Plus -> (+) | Minus -> (-) | Times -> (*) | Division -> (/)
@@ -88,10 +85,10 @@ module Interpreter =
     let evalCond facts (binding:Map<LValue,RTValue>) (cond:Condition) =
         match cond with
         | True -> true
-        | LessThan(e1, e2) ->
+        | Comparison(e1, compOp, e2) ->
             let i1 = getInt <| evalExp binding e1
             let i2 = getInt <| evalExp binding e2
-            i1 < i2
+            compOpToFunc compOp i1 i2
         | Condition.PartOf(e1, e2) ->
             let i1 = getInstanceRef <| evalExp binding e1
             let i2 = getInstanceRef <| evalExp binding e2

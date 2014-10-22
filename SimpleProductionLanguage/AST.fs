@@ -18,9 +18,11 @@ module AST =
         | Deref of LValue
         | BinOp of Expression * BinOperator * Expression
 
+    type ComparisonOperator = EQ | LT
+
     type Condition =
         | True
-        | LessThan of Expression * Expression
+        | Comparison of Expression * ComparisonOperator * Expression
         | PartOf of Expression * Expression
 
     type Action =
@@ -28,25 +30,62 @@ module AST =
 
     type Rule = Abstractions * Condition * Action
 
+    type LValueHistogram = Map<LValue, int>
+
+    let addToMap map (lval:LValue) n =
+      match Map.tryFind lval map with
+      | None -> Map.add lval n map
+      | Some n' -> Map.add lval (n + n') map
+
+    let histogramUnion mapl mapr = Map.fold addToMap mapl mapr
+    let histogramUnionMany maps = Seq.reduce histogramUnion maps
+
+    let singletonHistogram lval = Map.add lval 1 Map.empty
 
     let rec lvalDomExp =
         function
-        | Constant _ -> Set.empty
-        | Deref lval -> Set.singleton lval
-        | BinOp(e1, _, e2) -> Set.union (lvalDomExp e1) (lvalDomExp e2)
+        | Constant _ -> Map.empty
+        | Deref lval -> singletonHistogram lval
+        | BinOp(e1, _, e2) -> histogramUnion (lvalDomExp e1) (lvalDomExp e2)
 
     let lvalDomCond =
         function
-        | True -> Set.empty
-        | LessThan(e1,e2) -> Set.union (lvalDomExp e1) (lvalDomExp e2)
-        | PartOf(e1,e2) -> Set.union (lvalDomExp e1) (lvalDomExp e2)
+        | True -> Map.empty
+        | Comparison(e1, _, e2) -> histogramUnion (lvalDomExp e1) (lvalDomExp e2)
+        | PartOf(e1,e2) -> histogramUnion (lvalDomExp e1) (lvalDomExp e2)
 
     let lvalDomAction =
         function
-        | FindOrCreate(_, assignments) -> Set.unionMany <| Seq.map (fun(_, e) -> lvalDomExp e) assignments
+        | FindOrCreate(_, assignments) -> histogramUnionMany <| Seq.map (fun(_, e) -> lvalDomExp e) assignments
 
-    let lvalDomRule ((_,cond,action):Rule) =
-        Set.union (lvalDomCond cond) (lvalDomAction action)
+    let rec lvalsInAbstr (abstrs:Abstractions) =
+      histogramUnionMany <| Seq.map (fun (var, _) -> singletonHistogram <| Variable var) abstrs
+
+    let lvalDomRule ((abstrs,cond,action):Rule) =
+        histogramUnionMany [lvalsInAbstr abstrs
+                            lvalDomCond cond
+                            lvalDomAction action]
+
+    let collateHistogram (histogram:LValueHistogram) : LValueHistogram =
+      let addLVal hist lval n =
+        let rec loop lval =
+          match lval with
+          | Variable _ -> addToMap hist lval n
+          | Proj(lval', _) -> addToMap (loop lval') lval n
+        loop lval
+      Map.fold addLVal Map.empty histogram
+
+    let rec lvalToAllProjections (lval:LValue) : seq<LValue> =
+      Seq.append
+        (match lval with
+          | Variable _ -> Seq.empty
+          | Proj(lval', _) -> lvalToAllProjections lval')
+        (Seq.singleton lval)
+
+    let histogramToOrder (histogram:LValueHistogram) =
+      let lvalOrder = Seq.map fst << Seq.sortBy (fun(_,n) -> -n) << Map.toArray <| collateHistogram histogram
+      let expanded = Seq.collect lvalToAllProjections lvalOrder
+      Seq.distinct expanded
 
     let rec lvalInsideOut (lval:LValue) : VariableName * FieldName seq =
         match lval with
@@ -56,3 +95,10 @@ module AST =
             var, Seq.append fields (Seq.singleton fieldName)
 
     let evalOp = function | Plus -> (+) | Minus -> (-) | Times -> (*) | Division -> (/)
+
+    let compOpToFunc =
+      function
+      | LT -> (<)
+      | EQ -> (=)
+
+    let getType var (abstrs:Abstractions) = snd <| List.find (fun (var', _) -> var = var') abstrs

@@ -30,10 +30,10 @@ module C =
 		find_or_create pixel(x := 5)"
         let [ast] = parseRules s
         test <@ ast = (["c", "Circle"; "r", "Ray"],
-                 LessThan
+                 Comparison
                    (BinOp
                       (Deref (Variable "a"),Plus,
-                       BinOp (Deref (Variable "b"),Times,Deref (Variable "c"))),
+                       BinOp (Deref (Variable "b"),Times,Deref (Variable "c"))), LT,
                     Deref (Variable "d")), FindOrCreate ("pixel",[("x", Constant 5)])) @>
 
     [<Test>]
