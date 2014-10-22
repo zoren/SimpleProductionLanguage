@@ -6,12 +6,12 @@ open NUnit.Framework
 module C =
     open Swensen.Unquote
     open FParsec.CharParsers
-    let runP p s = 
+    let runP p s =
         match run p s with
         | Success(result, _, _) -> result
         | Failure(msg,_,_) -> printfn "%s" msg; raise <| System.NotImplementedException()
-    
-    
+
+
     open SimpleProductionLanguage.AST
     let parseRules s = runP SimpleProductionLanguage.Parser.rules s
 
