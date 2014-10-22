@@ -2,7 +2,7 @@
 
 open FParsec
 
-module Parser = 
+module Parser =
   let ws : Parser<unit, unit> = ( spaces >>. many( pstring "//" >>. skipRestOfLine true >>. spaces)) >>% ()
 
   let isAsciiIdStart c = isAsciiLetter c || c = '_'
@@ -33,7 +33,7 @@ module Parser =
   let rcurly = charws '}'
 
   let parens p = between lpar rpar p
-  
+
   open SimpleProductionLanguage.AST
 
   let plvalue =
@@ -50,17 +50,20 @@ module Parser =
     ]
 
   expOpp.TermParser <- ExpTermParser
-  
+
   let mkBin op l r = BinOp(l, op, r)
-  
+
   expOpp.AddOperator(InfixOperator("+", ws, 1, Associativity.Left, mkBin Plus))
   expOpp.AddOperator(InfixOperator("-", ws, 1, Associativity.Left, mkBin Minus))
   expOpp.AddOperator(InfixOperator("*", ws, 2, Associativity.Left, mkBin Times))
   expOpp.AddOperator(InfixOperator("/", ws, 2, Associativity.Left, mkBin Division))
 
-  let pcond = 
+  let twoExps = parens (pexp .>> (charws ',') .>>. pexp)
+
+  let pcond =
     choice [
         str_ws "true" >>% True
+        str_ws "part_of" >>. twoExps |>> PartOf
         pexp .>> (charws '<') .>>. pexp |>> LessThan
     ]
 
@@ -70,17 +73,17 @@ module Parser =
     choice [
         (str_ws "find_or_create") >>. id .>>. (parens (sepBy passignment comma)) |>> FindOrCreate
     ]
-  
+
   let pabstractions =
     let rec toAbstrs =
         function
         | [tup] -> Abstr tup
         | ((var, iType)::tail) -> Abstrs(var, iType, toAbstrs tail)
-    sepBy1 (id .>> colon .>>. id) comma |>> toAbstrs  
-  
+    sepBy1 (id .>> colon .>>. id) comma |>> toAbstrs
+
   let rule : Parser<Rule, unit> =
     tuple3
-        (charws '\\' >>. pabstractions) 
+        (charws '\\' >>. pabstractions)
         (str_ws "->" >>. pcond .>> qmark)
         action
 

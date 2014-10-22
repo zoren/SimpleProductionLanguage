@@ -23,6 +23,7 @@ module AST =
     type Condition =
         | True
         | LessThan of Expression * Expression
+        | PartOf of Expression * Expression
 
     type Action =
         | FindOrCreate of InstanceType * (VariableName * Expression) list
@@ -44,6 +45,7 @@ module AST =
         function
         | True -> Set.empty
         | LessThan(e1,e2) -> Set.union (lvalDomExp e1) (lvalDomExp e2)
+        | PartOf(e1,e2) -> Set.union (lvalDomExp e1) (lvalDomExp e2)
 
     let lvalDomAction =
         function

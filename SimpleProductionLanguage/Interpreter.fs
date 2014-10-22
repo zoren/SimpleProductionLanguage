@@ -14,9 +14,15 @@ module Interpreter =
         | (Int i) -> i
         | v -> failwithf "Runtime type error: value not of the expected type %A" v
 
+    let getInstanceRef =
+      function
+        | (InstanceRef i) -> i
+        | v -> failwithf "Runtime type error: value not of the expected type %A" v
+
     type Fact =
         | Instance of InstanceId * InstanceType
         | Assignment of InstanceId * FieldName * RTValue
+        | PartOf of InstanceId * InstanceId
 
     let findInstancesByType iType =
         Seq.choose
@@ -89,13 +95,17 @@ module Interpreter =
             let i2 = getInt <| evalExp binding e2
             Int <| evalOp op i1 i2
 
-    let evalCond (binding:Map<LValue,RTValue>) (cond:Condition) =
+    let evalCond facts (binding:Map<LValue,RTValue>) (cond:Condition) =
         match cond with
         | True -> true
         | LessThan(e1, e2) ->
             let i1 = getInt <| evalExp binding e1
             let i2 = getInt <| evalExp binding e2
             i1 < i2
+        | Condition.PartOf(e1, e2) ->
+            let i1 = getInstanceRef <| evalExp binding e1
+            let i2 = getInstanceRef <| evalExp binding e2
+            Set.contains (Fact.PartOf(i1, i2)) facts
 
     let findInstances iType assignments facts =
         let instFilter instId =
@@ -107,6 +117,7 @@ module Interpreter =
             function
             | Instance(instId, _) -> instId
             | Assignment(instId, _, _) -> instId
+            | PartOf(instId, parentInstId) -> max instId parentInstId
         let instIds = Seq.map getInstId facts
         Seq.max <| Seq.append (Seq.singleton 0) instIds
 
@@ -127,7 +138,7 @@ module Interpreter =
     let evalRule facts ((_,cond,action) as rule:Rule) =
         let bindings = bindRule facts rule
         let evalBinding facts binding =
-            if evalCond binding cond
+            if evalCond facts binding cond
             then Set.union
                     (Set.ofSeq <| evalAction facts binding action)
                     facts

@@ -26,7 +26,7 @@ module C =
     let t2() =
         let s = @"// draw circle
 \ c:Circle, r:Ray ->
-	a + b * c < d ? 
+	a + b * c < d ?
 		find_or_create pixel(x := 5)"
         let [ast] = parseRules s
         test <@ ast = (Abstrs("c", "Circle", Abstr("r", "Ray")),
@@ -35,6 +35,16 @@ module C =
                       (Deref (Variable "a"),Plus,
                        BinOp (Deref (Variable "b"),Times,Deref (Variable "c"))),
                     Deref (Variable "d")), FindOrCreate ("pixel",[("x", Constant 5)])) @>
+
+    [<Test>]
+    let testPartOf () =
+      let s = @"\ r:Root, p:Part ->
+  part_of(p, r) ?
+    find_or_create FoundInstance()"
+      let [ast] = parseRules s
+      test <@ ast = (Abstrs("r", "Root", Abstr("p", "Part")),
+                PartOf(Deref(Variable "p"), Deref(Variable "r")),
+                  FindOrCreate ("FoundInstance",[])) @>
 
     [<Test>]
     let parseFile() =

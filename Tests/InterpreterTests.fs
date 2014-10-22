@@ -173,3 +173,17 @@ module InterpreterTests =
         let removedInstance = Set.filter isInstanceFact removed
         test <@ Set.count removedInstance = 4 @>
         test <@ 12 = (Seq.length <| interp.GetInstancesOfType "Ray") @>
+
+    [<Test>]
+    let testPartOf()=
+        let s = @"
+\ r:Root, p:Part ->
+  part_of(p, r) ?
+    find_or_create FoundInstance()"
+        let rules = parseRules s
+        let interp = new Interpreter(rules)
+        interp.Add(Instance(0, "Root"))
+        interp.Add(Instance(1, "Part"))
+        interp.Add(PartOf(1, 0))
+        let out = interp.GetFacts()
+        test <@ Set.contains (Instance(2,"FoundInstance")) out @>
