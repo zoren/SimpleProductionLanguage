@@ -19,17 +19,18 @@ module PatternTreeInterpreter =
   let matchFactPattern (patArgs:Pattern) (args:Fact) = Array.forall2 matchValuePat args patArgs
 
   let matchTree ptree facts : Set<'Action * Environment> =
-      let rec loop (env:Environment) =
-        function
-        | Production p -> Seq.singleton (p, env)
-        | PatternNode(pat, test, children) ->
-          let matchingFacts = Set.ofSeq <| Seq.filter (matchFactPattern pat) facts
-          match test matchingFacts env with
-          | Some tokenElement ->
-            Seq.collect (fun fact -> Seq.collect (loop (tokenElement::env)) children) matchingFacts
-          | None ->
-            Seq.empty
-      Set.ofSeq <| loop [] ptree
+    let rec loop (env:Environment) =
+      function
+      | Production p -> Seq.singleton (p, env)
+      | PatternNode(pat, test, children) ->
+        let matchingFacts = Set.ofSeq <| Seq.filter (matchFactPattern pat) facts
+        let matchFact matchingFact =
+          let testEnv : TestEnvironment = matchingFact, env
+          match test matchingFacts testEnv with
+          | Some tokenElement -> Seq.collect (loop (tokenElement::env)) children
+          | None -> Seq.empty
+        Seq.collect matchFact matchingFacts
+    Set.ofSeq <| loop [] ptree
 
   type PatternTreeState<'Production> = PatternTree<'Production> * Set<Fact> ref
 

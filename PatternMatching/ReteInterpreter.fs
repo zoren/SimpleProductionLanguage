@@ -4,7 +4,7 @@ module ReteInterpreter =
   open PatternMatching.PatternTree
   open PatternMatching.ReteNetwork
 
-  let evalTest set (wme, token) (test:Test) = test set (FactTokenElement wme :: token)
+  let evalTest set testEnv (test:Test) = test set testEnv
 
   type ActivationFlag = Activate | Deactivate
 
