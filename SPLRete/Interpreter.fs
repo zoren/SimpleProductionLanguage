@@ -2,7 +2,6 @@
 
 module Interpreter =
   open PatternMatching.ReteNetwork
-  open PatternMatching.PatternTreeInterpreter
   open PatternMatching.ReteInterpreter
   open PatternMatching.PatternTree
   open SimpleProductionLanguage.AST
