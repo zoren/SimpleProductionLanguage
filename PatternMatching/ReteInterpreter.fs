@@ -4,7 +4,14 @@ module ReteInterpreter =
   open PatternMatching.PatternTree
   open PatternMatching.ReteNetwork
 
-  let evalTest set testEnv (test:Test) = test set testEnv
+  let evalTest set ((fact,_) as testEnv) (test:Test) =
+    match test set testEnv with
+    | Some tokenElement ->
+      match tokenElement with
+      | FactTokenElement tokenWme when fact <> tokenWme -> failwith "Fact not in fact token!"
+      | NestedTokenElement wmes when not <| Set.contains fact wmes -> failwith "Fact not in nested token!"
+      | _ -> Some tokenElement
+    | opt -> opt
 
   type ActivationFlag = Activate | Deactivate
 
