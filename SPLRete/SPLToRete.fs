@@ -116,8 +116,8 @@ module SPLToRete =
           buildTreeFromCondition pattern newST None
         | Proj(lval', cstic) ->
           let pattern = mkAssignPattern cstic
+          let var = lookupSymbolTable st lval'
           let newST = (Map.ofList[lval',FieldIndexInstance;lval, FieldIndexAssignmentValue]) :: st
-          let var = lookupSymbolTable newST lval'
-          let objEqTest = mkObjEqTest var
+          let objEqTest = mkObjEqTest {var with tokenIndex = var.tokenIndex + 1}
           buildTreeFromCondition pattern newST (Some objEqTest)
     loop [] lvalOrder
