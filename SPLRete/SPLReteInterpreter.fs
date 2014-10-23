@@ -31,3 +31,11 @@ module SPLInterpreter =
     member __.unassign instId cstic value =
       let fact = mkAssignFact instId cstic value
       ignore <| interp.Remove fact
+
+    member __.partOf instId parentId =
+      let fact = mkPartOfFact instId parentId
+      ignore <| interp.Add fact
+
+    member __.notPartOf instId parentId =
+      let fact = mkPartOfFact instId parentId
+      ignore <| interp.Remove fact
