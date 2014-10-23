@@ -70,6 +70,7 @@ module Parser =
     choice [
         str_ws "true" >>% True
         str_ws "part_of" >>. twoLVals |>> PartOf
+        str_ws "subpart_of" >>. twoLVals |>> SubpartOf
         tuple3 pexp pCompOp pexp |>> Comparison
     ]
 

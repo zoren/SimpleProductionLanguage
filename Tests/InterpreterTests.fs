@@ -187,3 +187,19 @@ module InterpreterTests =
         interp.Add(PartOf(1, 0))
         let out = interp.GetFacts()
         test <@ Set.contains (Instance(2,"FoundInstance")) out @>
+
+    [<Test>]
+    let testSubpartOf()=
+        let s = @"
+\ r:Root, sp:Subpart ->
+  subpart_of(sp, r) ?
+    find_or_create FoundInstance()"
+        let rules = parseRules s
+        let interp = new Interpreter(rules)
+        interp.Add(Instance(0, "Root"))
+        interp.Add(Instance(1, "Part"))
+        interp.Add(Instance(2, "Subpart"))
+        interp.Add(PartOf(1, 0))
+        interp.Add(PartOf(2, 1))
+        let out = interp.GetFacts()
+        test <@ Set.contains (Instance(3,"FoundInstance")) out @>

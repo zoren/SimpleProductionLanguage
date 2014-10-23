@@ -67,7 +67,7 @@ module SPLToRete =
   let mkObjEqTest var (env:TestEnvironment) = mkGenericObjEqTest FieldIndexInstance var env
 
   let forAllPreds preds x = Seq.forall (fun pred -> pred x) preds
-
+  exception NotFound
   let ruleToPTree ((abstrs, cond, action) as rule:Rule) : PatternTree<_> =
     let lvalsInCond = Set.ofSeq << Seq.map fst << Map.toSeq <| lvalDomCond cond
     let histogram = lvalDomRule rule
@@ -92,6 +92,36 @@ module SPLToRete =
                                               [mkGenericObjEqTest FieldIndexPartOfChild childVar
                                                mkGenericObjEqTest FieldIndexPartOfParent parentVar]
                 let partOfNode = mkSingleChildPatternNode partOfPattern (buildTest partOfObjEqTests) (loopLVals newSTPartOf)
+                None, partOfNode
+              | SubpartOf(childLVal, parentLVal) ->
+                let partOfPattern = mkPartOfPattern()
+                let newSTPartOf = Map.empty :: newST
+                let childVar = lookupSymbolTable newSTPartOf childLVal
+                let parentVar = lookupSymbolTable newSTPartOf parentLVal
+                let test set (([|String "partOf";Int instId;Int parentInstId|] as fact, token) as env:TestEnvironment) =
+                  let thisVal = getInt <| lookupTestEnv env parentVar
+                  let tokenVal = getInt <| lookupTestEnv env childVar
+                  let chooser =
+                    function
+                    | [|String "partOf";Int instId;Int _|] as fact -> Some (instId, fact)
+                    | _ -> None
+                  let parentMap = Map.ofSeq << Seq.choose chooser <| Set.union (Set.singleton fact) set
+                  let rec collectFacts child =
+                    match Map.tryFind child parentMap with
+                    | None -> raise NotFound
+                    | Some parentFact ->
+                      let parentId = getInt <| Array.get parentFact 2
+                      parentFact ::
+                        if parentId = thisVal
+                        then
+                          []
+                        else
+                          collectFacts parentId
+                  try
+                    Some << NestedTokenElement << Set.ofList <| collectFacts tokenVal
+                  with
+                    | :? NotFound -> None
+                let partOfNode = mkSingleChildPatternNode partOfPattern test (loopLVals newSTPartOf)
                 None, partOfNode
               | Comparison(el, compOp, er) ->
                 let cel = compExp newST el

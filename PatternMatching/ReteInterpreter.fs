@@ -48,11 +48,14 @@ module ReteInterpreter =
         betaMem.tokens := Set.add newToken !betaMem.tokens
       | Deactivate ->
         let tokenElementToRemove = tokElement
-        let tokenFilter tokenElement =
+        let tokenFilter =
           match tokenElementToRemove with
           | FactTokenElement wme ->
-            match tokenElement with
+            function
             | FactTokenElement wme' -> wme = wme'
+            | NestedTokenElement wmes' -> Set.contains wme wmes'
+          | _ ->
+            fun tokElem -> tokElem = tokenElementToRemove
         betaMem.tokens := Set.filter (fun token -> not <| List.exists tokenFilter token) !betaMem.tokens
       for child in node.children do
         leftActivation child newToken None

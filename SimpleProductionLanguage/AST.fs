@@ -24,6 +24,7 @@ module AST =
         | True
         | Comparison of Expression * ComparisonOperator * Expression
         | PartOf of LValue * LValue
+        | SubpartOf of LValue * LValue
 
     type Action =
         | FindOrCreate of InstanceType * (VariableName * Expression) list
@@ -53,6 +54,7 @@ module AST =
         | True -> Map.empty
         | Comparison(e1, _, e2) -> histogramUnion (lvalDomExp e1) (lvalDomExp e2)
         | PartOf(lval1,lval2) -> histogramUnion (singletonHistogram lval1) (singletonHistogram lval2)
+        | SubpartOf(lval1,lval2) -> histogramUnion (singletonHistogram lval1) (singletonHistogram lval2)
 
     let lvalDomAction =
         function

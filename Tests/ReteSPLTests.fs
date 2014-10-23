@@ -124,6 +124,61 @@ part_of(p, r) ?
       test <@ (Seq.length cs) = 1 @>
 
   [<Test>]
+  let testSubpartOf()=
+      let s = @"
+\ r:Root, sp:Subpart ->
+subpart_of(sp, r) ?
+  find_or_create FoundInstance()"
+      let interp = createSPLInterp s
+      let rootId = interp.create "Root"
+      let partId = interp.create "Part"
+      interp.partOf partId rootId
+
+      let subpartId = interp.create "Subpart"
+      interp.partOf subpartId partId
+
+      let cs = interp.Interpreter.GetInstancesOfType("FoundInstance")
+
+      test <@ (Seq.length cs) = 1 @>
+
+  [<Test>]
+  let testSubpartOfRemove()=
+      let s = @"
+\ r:Root, sp:Subpart ->
+subpart_of(sp, r) ?
+  find_or_create FoundInstance()"
+      let interp = createSPLInterp s
+      let rootId = interp.create "Root"
+      let partId = interp.create "Part"
+      interp.partOf partId rootId
+
+      let subpartId = interp.create "Subpart"
+      interp.partOf subpartId partId
+      interp.notPartOf subpartId partId
+      let cs = interp.Interpreter.GetInstancesOfType("FoundInstance")
+
+      test <@ Seq.isEmpty cs @>
+
+  [<Test>]
+  let testSubpartOfRemove2()=
+      let s = @"
+\ r:Root, sp:Subpart ->
+subpart_of(sp, r) ?
+  find_or_create FoundInstance()"
+      let interp = createSPLInterp s
+      let rootId = interp.create "Root"
+      let partId = interp.create "Part"
+      interp.partOf partId rootId
+
+      let subpartId = interp.create "Subpart"
+      interp.partOf subpartId partId
+      interp.notPartOf partId rootId
+      let cs = interp.Interpreter.GetInstancesOfType("FoundInstance")
+
+      test <@ Seq.isEmpty cs @>
+
+
+  [<Test>]
   let testTracingManualRayCreation()=
     let s = @"
 \ c:Circle, r:Ray ->

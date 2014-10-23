@@ -19,6 +19,7 @@ module PatternTree =
 
     type TokenElement =
       | FactTokenElement of Fact
+      | NestedTokenElement of Set<Fact>
 
     type Variable = { tokenIndex : int; fieldIndex : int}
 

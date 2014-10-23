@@ -95,6 +95,20 @@ module Interpreter =
             let i1 = getInstanceRef <| evalLVal binding lval1
             let i2 = getInstanceRef <| evalLVal binding lval2
             Set.contains (Fact.PartOf(i1, i2)) facts
+        | SubpartOf(lval1, lval2) ->
+            let i1 = getInstanceRef <| evalLVal binding lval1
+            let i2 = getInstanceRef <| evalLVal binding lval2
+            let chooser =
+              function
+              | Fact.PartOf(instId, parent) as fact -> Some (instId,fact)
+              | _ -> None
+            let parentMap = Map.ofSeq <| Seq.choose chooser facts
+            let rec collectFacts child =
+              match Map.tryFind child parentMap with
+              | None -> false
+              | Some(Fact.PartOf(_, parentId)) ->
+                parentId = i2 || collectFacts parentId
+            collectFacts i1
 
     let findInstances iType assignments facts =
         let instFilter instId =
