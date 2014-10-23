@@ -20,10 +20,10 @@ module SPLToRete =
   type SymbolTable = Map<LValue, int> list
 
   let lookupSymbolTable (symbolTable:SymbolTable) lvalue =
-    let rec loop i (st::sts) =
-      match Map.tryFind lvalue st with
+    let rec loop i (wmeST::st) =
+      match Map.tryFind lvalue wmeST with
       | Some fieldIndex -> {tokenIndex = i; fieldIndex = fieldIndex }
-      | None -> loop (i+1) sts
+      | None -> loop (i+1) st
     loop 0 symbolTable
 
   let compExp st exp =
@@ -98,9 +98,9 @@ module SPLToRete =
                 let cer = compExp newST er
                 let cf = compOpToFunc compOp
                 let compTest =
-                  fun env ->
-                    let vl = getInt << cel <| lookupTestEnv env
-                    let vr = getInt << cer <| lookupTestEnv env
+                  fun testEnv ->
+                    let vl = getInt << cel <| lookupTestEnv testEnv
+                    let vr = getInt << cer <| lookupTestEnv testEnv
                     cf vl vr
                 Some compTest, loopLVals newST
               | True -> None, loopLVals newST
