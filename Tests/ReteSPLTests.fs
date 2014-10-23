@@ -109,6 +109,21 @@ find_or_create Element(n := e.n + 1)
     test <@ Seq.length cs = 0 @>
 
   [<Test>]
+  let testPartOf()=
+      let s = @"
+\ r:Root, p:Part ->
+part_of(p, r) ?
+  find_or_create FoundInstance()"
+      let interp = createSPLInterp s
+      let rootId = interp.create "Root"
+      let partId = interp.create "Part"
+
+      interp.partOf partId rootId
+      let cs = interp.Interpreter.GetInstancesOfType("FoundInstance")
+
+      test <@ (Seq.length cs) = 1 @>
+
+  [<Test>]
   let testTracingManualRayCreation()=
     let s = @"
 \ c:Circle, r:Ray ->
