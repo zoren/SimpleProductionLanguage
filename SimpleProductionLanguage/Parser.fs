@@ -64,12 +64,12 @@ module Parser =
       str_ws "=" >>% EQ
     ]
 
-  let twoExps = parens (pexp .>> (charws ',') .>>. pexp)
+  let twoLVals = parens (plvalue .>> (charws ',') .>>. plvalue)
 
   let pcond =
     choice [
         str_ws "true" >>% True
-        str_ws "part_of" >>. twoExps |>> PartOf
+        str_ws "part_of" >>. twoLVals |>> PartOf
         tuple3 pexp pCompOp pexp |>> Comparison
     ]
 

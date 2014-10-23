@@ -43,7 +43,7 @@ module ParserTest =
     find_or_create FoundInstance()"
       let [ast] = parseRules s
       test <@ ast = (["r", "Root";"p", "Part"],
-                PartOf(Deref(Variable "p"), Deref(Variable "r")),
+                PartOf(Variable "p", Variable "r"),
                   FindOrCreate ("FoundInstance",[])) @>
 
     [<Test>]

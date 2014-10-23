@@ -73,10 +73,12 @@ module Interpreter =
     let evalOp =
         function | Plus -> (+) | Minus -> (-) | Times -> (*) | Division -> (/)
 
+    let evalLVal binding lval = Map.find lval binding
+
     let rec evalExp binding =
         function
         | Constant i -> Int i
-        | Deref lval -> Map.find lval binding
+        | Deref lval -> evalLVal binding lval
         | BinOp(e1,op,e2) ->
             let i1 = getInt <| evalExp binding e1
             let i2 = getInt <| evalExp binding e2
@@ -89,9 +91,9 @@ module Interpreter =
             let i1 = getInt <| evalExp binding e1
             let i2 = getInt <| evalExp binding e2
             compOpToFunc compOp i1 i2
-        | Condition.PartOf(e1, e2) ->
-            let i1 = getInstanceRef <| evalExp binding e1
-            let i2 = getInstanceRef <| evalExp binding e2
+        | Condition.PartOf(lval1, lval2) ->
+            let i1 = getInstanceRef <| evalLVal binding lval1
+            let i2 = getInstanceRef <| evalLVal binding lval2
             Set.contains (Fact.PartOf(i1, i2)) facts
 
     let findInstances iType assignments facts =

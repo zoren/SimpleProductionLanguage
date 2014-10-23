@@ -83,7 +83,7 @@ module SPLToRete =
           let testOpt, child =
             if Set.isProperSubset lvalsInCond abstractedLVals then
               match cond with
-              | PartOf(Deref childLVal, Deref parentLVal) ->
+              | PartOf(childLVal, parentLVal) ->
                 let partOfPattern = mkPartOfPattern()
                 let newSTPartOf = Map.empty :: newST
                 let childVar = lookupSymbolTable newSTPartOf childLVal
