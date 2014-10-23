@@ -45,10 +45,10 @@ module SPLToRete =
 
   let mkSingleChildPatternNode pattern test child = PatternNode(pattern, test, [| child |])
 
-  let fieldIndexAssignmentValue = 3
-  let fieldIndexInstance = 1
-  let fieldIndexPartOfChild = 1
-  let fieldIndexPartOfParent = 2
+  let FieldIndexAssignmentValue = 3
+  let FieldIndexInstance = 1
+  let FieldIndexPartOfChild = 1
+  let FieldIndexPartOfParent = 2
 
   let lvalsInSymbolTable (st:SymbolTable) =
     Set.unionMany <| List.map (fun (m:Map<LValue, int>) -> Set.ofSeq << Seq.map fst <| Map.toSeq m) st
@@ -64,7 +64,7 @@ module SPLToRete =
     let tokenVal = getInt <| lookupTestEnv env var
     thisVal = tokenVal
 
-  let mkObjEqTest var (env:TestEnvironment) = mkGenericObjEqTest fieldIndexInstance var env
+  let mkObjEqTest var (env:TestEnvironment) = mkGenericObjEqTest FieldIndexInstance var env
 
   let forAllPreds preds x = Seq.forall (fun pred -> pred x) preds
 
@@ -89,8 +89,8 @@ module SPLToRete =
                 let childVar = lookupSymbolTable newSTPartOf childLVal
                 let parentVar = lookupSymbolTable newSTPartOf parentLVal
                 let partOfObjEqTests = forAllPreds
-                                              [mkGenericObjEqTest fieldIndexPartOfChild childVar
-                                               mkGenericObjEqTest fieldIndexPartOfParent parentVar]
+                                              [mkGenericObjEqTest FieldIndexPartOfChild childVar
+                                               mkGenericObjEqTest FieldIndexPartOfParent parentVar]
                 let partOfNode = mkSingleChildPatternNode partOfPattern (buildTest partOfObjEqTests) (loopLVals newSTPartOf)
                 None, partOfNode
               | Comparison(el, compOp, er) ->
@@ -112,11 +112,11 @@ module SPLToRete =
         | Variable v ->
           let iType = getType v abstrs
           let pattern = mkClassPattern iType
-          let newST = (Map.ofList [lval,fieldIndexInstance]) :: st
+          let newST = (Map.ofList [lval,FieldIndexInstance]) :: st
           buildTreeFromCondition pattern newST None
         | Proj(lval', cstic) ->
           let pattern = mkAssignPattern cstic
-          let newST = (Map.ofList[lval',fieldIndexInstance;lval, fieldIndexAssignmentValue]) :: st
+          let newST = (Map.ofList[lval',FieldIndexInstance;lval, FieldIndexAssignmentValue]) :: st
           let var = lookupSymbolTable newST lval'
           let objEqTest = mkObjEqTest var
           buildTreeFromCondition pattern newST (Some objEqTest)
