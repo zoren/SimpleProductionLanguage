@@ -69,7 +69,8 @@ module Interpreter =
             | lval::lvals ->
                 let bindings = bindLValValue accMap lval
                 Seq.collect (fun binding -> binder binding lvals) bindings
-        let lvalAndAbstr = Set.toList <| Set.union lvalDom (lvalsInAbstr abstrs)
+        let abstrLValSet = Set.ofSeq <| List.map (Variable << fst) abstrs
+        let lvalAndAbstr = Set.toList <| Set.union lvalDom abstrLValSet
         binder Map.empty <| lvalAndAbstr
 
     let evalOp =

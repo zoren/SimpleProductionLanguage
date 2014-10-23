@@ -28,8 +28,7 @@ module SPLToRete =
           Int <| opFunc vl vr
     loop exp
 
-  let ruleToPTree ((abstrs, cond, action) as rule:Rule) : PatternTree<_> =
-    let abstrList = Seq.toList <| abstrToSeq abstrs
+  let ruleToPTree ((abstrList, cond, action) as rule:Rule) : PatternTree<_> =
     let lvals = lvalDomRule rule
     let rec loopAbstr env =
       function
