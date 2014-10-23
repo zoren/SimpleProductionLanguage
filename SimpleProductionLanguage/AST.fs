@@ -38,7 +38,7 @@ module AST =
       | Some n' -> Map.add lval (n + n') map
 
     let histogramUnion mapl mapr = Map.fold addToMap mapl mapr
-    let histogramUnionMany maps = Seq.reduce histogramUnion maps
+    let histogramUnionMany maps = Seq.fold histogramUnion Map.empty maps
 
     let singletonHistogram lval = Map.add lval 1 Map.empty
 
