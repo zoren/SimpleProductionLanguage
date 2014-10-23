@@ -3,7 +3,7 @@
 open NUnit.Framework
 
 [<TestFixture>]
-module C =
+module ParserTest =
     open Swensen.Unquote
     open FParsec.CharParsers
     let runP p s =
