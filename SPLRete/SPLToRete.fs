@@ -81,7 +81,7 @@ module SPLToRete =
         let buildTreeFromCondition pattern newST objEqTestOpt =
           let abstractedLVals = lvalsInSymbolTable newST
           let testOpt, child =
-            if Set.isProperSubset lvalsInCond abstractedLVals then
+            if Set.isSubset lvalsInCond abstractedLVals then
               match cond with
               | PartOf(childLVal, parentLVal) ->
                 let partOfPattern = mkPartOfPattern()
