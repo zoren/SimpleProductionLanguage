@@ -4,11 +4,6 @@ module SPLToRete =
   open SimpleProductionLanguage.AST
   open PatternMatching.PatternTree
 
-  let targetWMEOffset lval =
-    match lval with
-    | Proj _ -> 3
-    | LValue.Variable _ -> 1
-
   let mkClassPattern instType = [|PatternValue <| String "class"; Anything IntType; PatternValue <| String instType|]
   let mkAssignPattern cstic = [|PatternValue <| String "assign"; Anything IntType; PatternValue <| String cstic; Anything IntType|]
   let mkPartOfPattern() = [|PatternValue <| String "partOf"; Anything IntType; Anything IntType|]
